@@ -65,10 +65,14 @@ import com.idphoto.printing.core.FloatRect
 import com.idphoto.printing.print.PrinterConnectionState
 import java.io.File
 import java.util.Locale
+import java.util.UUID
 
 data class CapturedPhoto(
     val file: File,
-    val cameraSquare: FloatRect,
+    val cameraSquare: FloatRect?,
+    val isGroup: Boolean = false,
+    val framingError: String? = null,
+    val allowLowResolution: Boolean = false,
 )
 
 @androidx.annotation.OptIn(markerClass = [TransformExperimental::class])
@@ -77,6 +81,7 @@ fun CaptureScreen(
     printerState: PrinterConnectionState,
     onCaptured: (CapturedPhoto) -> Unit,
     onPrinterSetup: () -> Unit,
+    onChoosePhoto: () -> Unit,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -87,6 +92,7 @@ fun CaptureScreen(
         )
     }
     var isCapturing by remember { mutableStateOf(false) }
+    var groupMode by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -132,10 +138,10 @@ fun CaptureScreen(
                     },
                     modifier = Modifier.fillMaxSize(),
                 )
-                FaceGuide(modifier = Modifier.fillMaxSize())
+                if (!groupMode) FaceGuide(modifier = Modifier.fillMaxSize())
             }
         } else {
-            PermissionPrompt(onRequest = {
+            PermissionPrompt(onChoosePhoto = onChoosePhoto, onRequest = {
                 permissionLauncher.launch(Manifest.permission.CAMERA)
             })
         }
@@ -154,21 +160,21 @@ fun CaptureScreen(
                     .padding(horizontal = 20.dp, vertical = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(
-                    text = "Frame the complete 2 × 2 photo inside the square.",
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = "Passport size keeps this height and trims only the left and right sides.",
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color.White.copy(alpha = 0.82f),
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    listOf(false to "Single", true to "Group").forEach { (group, label) ->
+                        OutlinedButton(
+                            onClick = { groupMode = group },
+                            enabled = !isCapturing,
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            shape = RoundedCornerShape(18.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = if (groupMode == group) Color.White else Color.Transparent,
+                                contentColor = if (groupMode == group) PineDark else Color.White,
+                            ),
+                        ) { Text(label) }
+                    }
+                }
             }
 
             Column(
@@ -199,6 +205,8 @@ fun CaptureScreen(
                     Spacer(Modifier.height(12.dp))
                 }
 
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
                 Button(
                     onClick = {
                         errorMessage = null
@@ -215,6 +223,7 @@ fun CaptureScreen(
                             return@Button
                         }
                         isCapturing = true
+                        val shotIsGroup = groupMode
                         val previewSize = ImageSize(activePreview.width, activePreview.height)
                         val guide = squareGuideRect(
                             width = activePreview.width.toFloat(),
@@ -223,7 +232,7 @@ fun CaptureScreen(
                         val captureDir = File(context.cacheDir, "captures").apply { mkdirs() }
                         val photoFile = File(
                             captureDir,
-                            String.format(Locale.US, "id-photo-%d.jpg", System.currentTimeMillis()),
+                            "id-photo-${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(8)}.jpg",
                         )
                         val metadata = ImageCapture.Metadata().apply {
                             setReversedHorizontal(false)
@@ -240,14 +249,16 @@ fun CaptureScreen(
                                         // LifecycleCameraController binds both use cases to PreviewView's
                                         // viewport. Saved JPEGs are cropped to it by CameraX; normalize
                                         // in upright coordinates rather than mixing raw buffer rotations.
-                                        val mappedGuide = CaptureGuideMapper.map(
-                                            previewSize, BitmapLoader.uprightSize(photoFile), guide,
-                                        )
+                                        val mapping = if (shotIsGroup) null else runCatching {
+                                            CaptureGuideMapper.map(previewSize, BitmapLoader.uprightSize(photoFile), guide)
+                                        }
                                         isCapturing = false
                                         onCaptured(
                                             CapturedPhoto(
                                                 file = photoFile,
-                                                cameraSquare = mappedGuide,
+                                                cameraSquare = mapping?.getOrNull(),
+                                                isGroup = shotIsGroup,
+                                                framingError = mapping?.exceptionOrNull()?.message,
                                             ),
                                         )
                                     } catch (error: Exception) {
@@ -266,7 +277,7 @@ fun CaptureScreen(
                         )
                     },
                     enabled = !isCapturing,
-                    modifier = Modifier.size(width = 168.dp, height = 56.dp),
+                    modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
@@ -282,6 +293,14 @@ fun CaptureScreen(
                     } else {
                         Text("Take Photo", fontWeight = FontWeight.Bold)
                     }
+                }
+                OutlinedButton(
+                    onClick = onChoosePhoto,
+                    enabled = !isCapturing,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                    border = BorderStroke(1.dp, Color.White),
+                ) { Text("Open Photo") }
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
@@ -358,7 +377,7 @@ private fun squareGuideRect(width: Float, height: Float): FloatRect {
 }
 
 @Composable
-private fun PermissionPrompt(onRequest: () -> Unit) {
+private fun PermissionPrompt(onRequest: () -> Unit, onChoosePhoto: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -374,5 +393,7 @@ private fun PermissionPrompt(onRequest: () -> Unit) {
         )
         Spacer(Modifier.height(20.dp))
         Button(onClick = onRequest) { Text("Allow Camera") }
+        OutlinedButton(onClick = onChoosePhoto,
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)) { Text("Open Photo") }
     }
 }

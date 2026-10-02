@@ -1,9 +1,7 @@
 package com.idphoto.printing.ui
 
 import android.graphics.Bitmap
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.BackHandler
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,9 +51,6 @@ import com.idphoto.printing.print.PhotoColorTone
 import com.idphoto.printing.print.SheetJpegActions
 import com.idphoto.printing.print.SheetJpegGenerator
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -72,7 +67,6 @@ fun SheetPreviewScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var pendingSaveFile by remember(bitmap, review, combination) { mutableStateOf<File?>(null) }
     var isExporting by remember { mutableStateOf(false) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
     var exportFailed by remember { mutableStateOf(false) }
@@ -97,30 +91,6 @@ fun SheetPreviewScreen(
             printScale = printScale,
             photoColorTone = photoColorTone,
         )
-    }
-
-    val saveLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("image/jpeg"),
-    ) { destination ->
-        val source = pendingSaveFile
-        pendingSaveFile = null
-        if (destination != null && source != null) {
-            scope.launch {
-                isExporting = true
-                try {
-                    withContext(Dispatchers.IO) {
-                        SheetJpegActions.save(context, source, destination)
-                    }
-                    exportFailed = false
-                    exportMessage = "JPEG saved."
-                } catch (error: Exception) {
-                    exportFailed = true
-                    exportMessage = error.message ?: "The JPEG could not be saved."
-                } finally {
-                    isExporting = false
-                }
-            }
-        }
     }
 
     Column(
@@ -229,36 +199,12 @@ fun SheetPreviewScreen(
                         isExporting = true
                         exportMessage = null
                         try {
-                            pendingSaveFile = prepareJpeg()
-                            val timestamp = SimpleDateFormat(
-                                "yyyyMMdd-HHmmss",
-                                Locale.US,
-                            ).format(Date())
-                            saveLauncher.launch("ID-photo-5x7-$timestamp.jpg")
-                        } catch (error: Exception) {
-                            pendingSaveFile = null
-                            exportFailed = true
-                            exportMessage = error.message ?: "The JPEG could not be prepared."
-                        } finally {
-                            isExporting = false
-                        }
-                    }
-                },
-                enabled = !isBusy && photoReady,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(if (isExporting) "Preparing…" else "Save")
-            }
-            OutlinedButton(
-                onClick = {
-                    scope.launch {
-                        isExporting = true
-                        exportMessage = null
-                        try {
                             val jpeg = prepareJpeg()
                             SheetJpegActions.share(context, jpeg)
                             exportFailed = false
                             exportMessage = "Sharing options opened."
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
                         } catch (error: Exception) {
                             exportFailed = true
                             exportMessage = error.message ?: "The JPEG could not be shared."
@@ -270,7 +216,7 @@ fun SheetPreviewScreen(
                 enabled = !isBusy && photoReady,
                 modifier = Modifier.weight(1f),
             ) {
-                Text("Share")
+                Text(if (isExporting) "Preparing…" else "Share")
             }
         }
 

@@ -5,13 +5,17 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -25,9 +29,15 @@ import com.idphoto.printing.analysis.BlurDetector
 import com.idphoto.printing.analysis.PhotoAnalyzer
 import com.idphoto.printing.analysis.PhotoReview
 import com.idphoto.printing.core.ImageSize
+import com.idphoto.printing.core.FloatRect
+import com.idphoto.printing.core.ImportCrop
 import com.idphoto.printing.core.SheetCombination
 import com.idphoto.printing.image.BackgroundWhitener
 import com.idphoto.printing.image.BitmapLoader
+import com.idphoto.printing.image.ImportedPhoto
+import com.idphoto.printing.image.PhotoImporter
+import com.idphoto.printing.ui.ImportCropScreen
+import com.idphoto.printing.ui.SaveCaptureScreen
 import com.idphoto.printing.image.PhotoAdjustments
 import com.idphoto.printing.image.PhotoAdjustmentProcessor
 import com.idphoto.printing.ui.CapturedPhoto
@@ -42,6 +52,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +68,8 @@ class MainActivity : ComponentActivity() {
 
 private enum class WorkflowScreen {
     CAPTURE,
+    SAVE_CAPTURE,
+    IMPORT,
     REVIEW,
     COMBINATION,
     PREVIEW,
@@ -77,6 +91,7 @@ private fun IdPhotoWorkflow() {
     val backgroundWhitener = remember { BackgroundWhitener() }
     var screen by remember { mutableStateOf(WorkflowScreen.CAPTURE) }
     var capturedPhoto by remember { mutableStateOf<CapturedPhoto?>(null) }
+    var pendingCapture by remember { mutableStateOf<CapturedPhoto?>(null) }
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var whiteBackgroundBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var whiteBackgroundEnabled by remember { mutableStateOf(true) }
@@ -91,6 +106,54 @@ private fun IdPhotoWorkflow() {
     var appliedSource by remember { mutableStateOf<Bitmap?>(null) }
     var appliedSettings by remember { mutableStateOf<PhotoAdjustments?>(null) }
     var adjustmentError by remember { mutableStateOf<String?>(null) }
+    val importScope = rememberCoroutineScope()
+    var importJob by remember { mutableStateOf<Job?>(null) }
+    var importGeneration by remember { mutableIntStateOf(0) }
+    var importedPhoto by remember { mutableStateOf<ImportedPhoto?>(null) }
+    var importedFaces by remember { mutableStateOf<List<FloatRect>>(emptyList()) }
+    var importCrop by remember { mutableStateOf<FloatRect?>(null) }
+    var importBusy by remember { mutableStateOf(false) }
+    var detectingFaces by remember { mutableStateOf(false) }
+    var importError by remember { mutableStateOf<String?>(null) }
+    fun openImportedPhoto(uri: Uri) {
+            val generation = ++importGeneration
+            importJob?.cancel()
+            screen = WorkflowScreen.IMPORT
+            importBusy = true
+            importError = null
+            importJob = importScope.launch {
+                var opened = false
+                try {
+                    val photo = PhotoImporter.open(context, uri)
+                    importedPhoto?.file?.delete()
+                    importedPhoto = photo
+                    opened = true
+                    importedFaces = emptyList()
+                    importCrop = ImportCrop.square(photo.size, photo.size.width / 2f, photo.size.height / 2f,
+                        minOf(photo.size.width, photo.size.height).toFloat())
+                    importBusy = false
+                    detectingFaces = true
+                    // Suggestions use the small overview. The chosen crop is decoded from the original file.
+                    val found = analyzer.findFaces(photo.preview)
+                    val sx = photo.size.width.toFloat() / photo.preview.width
+                    val sy = photo.size.height.toFloat() / photo.preview.height
+                    importedFaces = found.map { FloatRect(it.left * sx, it.top * sy, it.right * sx, it.bottom * sy) }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    importError = if (opened) "Face suggestions unavailable. You can position the square manually."
+                        else error.message ?: "This photo could not be opened. Choose another file."
+                } finally {
+                    if (generation == importGeneration) {
+                        importBusy = false
+                        detectingFaces = false
+                    }
+                }
+            }
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) openImportedPhoto(uri)
+    }
 
     val sourceBitmap = if (whiteBackgroundEnabled) {
         whiteBackgroundBitmap ?: originalBitmap
@@ -135,7 +198,7 @@ private fun IdPhotoWorkflow() {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
-            adjustmentError = "Adjustments could not be applied. Try Reset or retake."
+            adjustmentError = "Adjustments could not be applied. Switch Auto on and off, or choose the photo again."
         }
     }
 
@@ -161,7 +224,10 @@ private fun IdPhotoWorkflow() {
         autoAdjust = false
         adjustedBitmap = null
         try {
-            val analyzed = analyzer.analyze(Uri.fromFile(file), capture.cameraSquare)
+            val square = requireNotNull(capture.cameraSquare) {
+                capture.framingError ?: "The square could not be matched. The original was saved; use Open Photo to reframe it."
+            }
+            val analyzed = analyzer.analyze(Uri.fromFile(file), square, capture.allowLowResolution)
             val loaded = withContext(Dispatchers.IO) { BitmapLoader.load(file) }
             originalBitmap = loaded
             val checkedReview = analyzed.withDecodedBitmapChecks(loaded)
@@ -198,12 +264,24 @@ private fun IdPhotoWorkflow() {
         review = null
         capturedPhoto?.file?.delete()
         capturedPhoto = null
-        screen = WorkflowScreen.CAPTURE
+        screen = if (importedPhoto != null) WorkflowScreen.IMPORT else WorkflowScreen.CAPTURE
     }
 
     BackHandler(enabled = screen != WorkflowScreen.CAPTURE) {
         when (screen) {
             WorkflowScreen.CAPTURE -> Unit
+            WorkflowScreen.SAVE_CAPTURE -> Unit
+            WorkflowScreen.IMPORT -> {
+                ++importGeneration
+                importJob?.cancel()
+                importBusy = false
+                detectingFaces = false
+                importedPhoto?.file?.delete()
+                importedPhoto = null
+                importedFaces = emptyList()
+                importCrop = null
+                screen = WorkflowScreen.CAPTURE
+            }
             WorkflowScreen.REVIEW -> retake()
             WorkflowScreen.COMBINATION -> screen = WorkflowScreen.REVIEW
             WorkflowScreen.PREVIEW -> screen = WorkflowScreen.COMBINATION
@@ -215,11 +293,68 @@ private fun IdPhotoWorkflow() {
         WorkflowScreen.CAPTURE -> CaptureScreen(
             printerState = printerState,
             onCaptured = { capture ->
-                capturedPhoto = capture
-                screen = WorkflowScreen.REVIEW
+                pendingCapture = capture
+                screen = WorkflowScreen.SAVE_CAPTURE
             },
             onPrinterSetup = {
                 screen = WorkflowScreen.PRINTER_SETUP
+            },
+            onChoosePhoto = { picker.launch(arrayOf("image/*")) },
+        )
+        WorkflowScreen.SAVE_CAPTURE -> {
+            val capture = requireNotNull(pendingCapture)
+            SaveCaptureScreen(capture) { savedUri ->
+                pendingCapture = null
+                if (capture.isGroup) {
+                    openImportedPhoto(savedUri)
+                    capture.file.delete()
+                } else {
+                    capturedPhoto = capture
+                    screen = WorkflowScreen.REVIEW
+                }
+            }
+        }
+        WorkflowScreen.IMPORT -> ImportCropScreen(
+            photo = importedPhoto, faces = importedFaces, crop = importCrop,
+            detecting = detectingFaces, busy = importBusy, error = importError,
+            onCropChange = { importCrop = it; importError = null },
+            onChooseFile = { picker.launch(arrayOf("image/*")) },
+            onBack = {
+                ++importGeneration
+                importJob?.cancel()
+                importBusy = false
+                detectingFaces = false
+                importedPhoto?.file?.delete()
+                importedPhoto = null
+                importedFaces = emptyList()
+                importCrop = null
+                screen = WorkflowScreen.CAPTURE
+            },
+            onUseCrop = {
+                val photo = importedPhoto
+                val square = importCrop
+                if (photo != null && square != null) {
+                    val generation = ++importGeneration
+                    importJob?.cancel()
+                    detectingFaces = false
+                    importBusy = true
+                    importError = null
+                    importJob = importScope.launch {
+                        try {
+                            val file = PhotoImporter.crop(context, photo, square)
+                            val size = withContext(Dispatchers.IO) { BitmapLoader.uprightSize(file) }
+                            val side = minOf(size.width, size.height).toFloat()
+                            capturedPhoto = CapturedPhoto(file, FloatRect(0f, 0f, side, side), allowLowResolution = true)
+                            screen = WorkflowScreen.REVIEW
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            importError = error.message ?: "The crop could not be prepared. Try another photo."
+                        } finally {
+                            if (generation == importGeneration) importBusy = false
+                        }
+                    }
+                }
             },
         )
         WorkflowScreen.REVIEW -> ReviewScreen(
@@ -236,6 +371,7 @@ private fun IdPhotoWorkflow() {
             adjustmentsReady = adjustmentsReady,
             adjustmentError = adjustmentError,
             onRetake = ::retake,
+            retakeLabel = if (importedPhoto != null) "Reframe" else "Retake",
             onContinue = { screen = WorkflowScreen.COMBINATION },
         )
         WorkflowScreen.COMBINATION -> CombinationScreen(
@@ -277,8 +413,9 @@ private fun PhotoReview.withDecodedBitmapChecks(bitmap: Bitmap): PhotoReview {
                     check
                 } else {
                     check.copy(
-                        status = CheckStatus.FAIL,
-                        detail = "The working crop is below 300 dpi. Move closer and retake.",
+                        status = if (allowLowResolution) CheckStatus.WARNING else CheckStatus.FAIL,
+                        detail = if (allowLowResolution) "Low resolution: prints may look softer. You can still use this crop."
+                        else "The working crop is below 300 dpi. Use a higher-resolution photo or move closer and retake.",
                     )
                 }
                 "Blur" -> check.copy(
@@ -292,6 +429,6 @@ private fun PhotoReview.withDecodedBitmapChecks(bitmap: Bitmap): PhotoReview {
                 else -> check
             }
         },
-        readyToPrint = readyToPrint && decodedResolutionSufficient && blur.isSharp,
+        readyToPrint = readyToPrint && (decodedResolutionSufficient || allowLowResolution) && blur.isSharp,
     )
 }

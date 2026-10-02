@@ -24,6 +24,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 
 enum class CheckStatus {
     PASS,
+    WARNING,
     FAIL,
 }
 
@@ -40,6 +41,7 @@ data class PhotoReview(
     val readyToPrint: Boolean,
     val failureMessage: String? = null,
     val passportFaceFits: Boolean = false,
+    val allowLowResolution: Boolean = false,
 ) {
     fun readyFor(combination: SheetCombination): Boolean =
         readyToPrint && (combination.passportCount == 0 || passportFaceFits)
@@ -55,11 +57,17 @@ class PhotoAnalyzer(context: Context) : Closeable {
             .build(),
     )
 
-    suspend fun analyze(uri: Uri, cameraSquare: FloatRect): PhotoReview {
+    suspend fun findFaces(bitmap: android.graphics.Bitmap): List<FloatRect> =
+        detector.processAwait(InputImage.fromBitmap(bitmap, 0)).map {
+            val bounds = it.boundingBox
+            FloatRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat())
+        }.sortedBy { it.left }
+
+    suspend fun analyze(uri: Uri, cameraSquare: FloatRect, allowLowResolution: Boolean = false): PhotoReview {
         return try {
             val image = InputImage.fromFilePath(appContext, uri)
             val faces = detector.processAwait(image)
-            buildReview(image, faces, cameraSquare)
+            buildReview(image, faces, cameraSquare, allowLowResolution)
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
@@ -77,6 +85,7 @@ class PhotoAnalyzer(context: Context) : Closeable {
         image: InputImage,
         faces: List<Face>,
         cameraSquare: FloatRect,
+        allowLowResolution: Boolean,
     ): PhotoReview {
         val imageSize = ImageSize(image.width, image.height)
         val singleFace = faces.singleOrNull()
@@ -106,7 +115,7 @@ class PhotoAnalyzer(context: Context) : Closeable {
                 label = "One person",
                 status = passFail(exactlyOneFace),
                 detail = when (faces.size) {
-                    0 -> "No face found. Retake with the face inside the guide."
+                    0 -> "No face found. Reframe or choose a clearer photo with the face inside the square."
                     1 -> "Exactly one face detected."
                     else -> "${faces.size} faces found. Only one person is allowed."
                 },
@@ -142,9 +151,9 @@ class PhotoAnalyzer(context: Context) : Closeable {
                 label = "Framing",
                 status = passFail(framingReliable),
                 detail = if (framingReliable) {
-                    "The 2×2 crop matches the camera square. The 35×45 crop trims only left and right."
+                    "The 2×2 crop matches the selected square. The 35×45 crop trims only left and right."
                 } else {
-                    "The saved photo did not contain the complete camera square. Please retake."
+                    "The photo did not contain the complete square. Reframe or retake."
                 },
             ),
             ReviewCheck(
@@ -153,7 +162,7 @@ class PhotoAnalyzer(context: Context) : Closeable {
                 detail = if (squareFaceFits) {
                     "The detected face and both eyes fit inside the square crop."
                 } else {
-                    "The face is outside or clipped by the square. Center the person and retake."
+                    "The face is outside or clipped by the square. Reframe with the person centered."
                 },
             ),
             ReviewCheck(
@@ -162,16 +171,17 @@ class PhotoAnalyzer(context: Context) : Closeable {
                 detail = if (passportFaceFits) {
                     "The detected face and both eyes fit inside the narrower passport crop."
                 } else {
-                    "Center the person and retake for passport photos, or choose a square-only layout."
+                    "Reframe with the person centered for passport photos, or choose a square-only layout."
                 },
             ),
             ReviewCheck(
                 label = "Print resolution",
-                status = passFail(resolutionSufficient),
+                status = if (resolutionSufficient) CheckStatus.PASS else if (allowLowResolution) CheckStatus.WARNING else CheckStatus.FAIL,
                 detail = if (resolutionSufficient) {
                     "Both guide-based crops have at least 300 dpi source pixels."
                 } else {
-                    "The usable crop is too small for the 2×2 print."
+                    if (allowLowResolution) "Low resolution: prints may look softer. You can still use this crop."
+                    else "The usable crop is too small for the 2×2 print."
                 },
             ),
             ReviewCheck(
@@ -186,8 +196,9 @@ class PhotoAnalyzer(context: Context) : Closeable {
             cropPlan = cropPlan,
             checks = checks,
             readyToPrint = exactlyOneFace && eyesFound && eyesOpen && poseAcceptable &&
-                framingReliable && resolutionSufficient && squareFaceFits,
+                framingReliable && (resolutionSufficient || allowLowResolution) && squareFaceFits,
             passportFaceFits = passportFaceFits,
+            allowLowResolution = allowLowResolution,
         )
     }
 

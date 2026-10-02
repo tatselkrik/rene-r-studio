@@ -56,6 +56,7 @@ fun ReviewScreen(
     adjustmentError: String?,
     onRetake: () -> Unit,
     onContinue: () -> Unit,
+    retakeLabel: String = "Retake",
 ) {
     Column(
         modifier = Modifier
@@ -161,11 +162,12 @@ fun ReviewScreen(
             review?.checks?.forEach { check ->
                 val statusColor = when (check.status) {
                     CheckStatus.PASS -> Pine
+                    CheckStatus.WARNING -> Color(0xFF9A6700)
                     CheckStatus.FAIL -> ErrorRed
                 }
                 val statusText = when (check.status) {
                     CheckStatus.PASS -> "✓"
-                    CheckStatus.FAIL -> "!"
+                    CheckStatus.WARNING, CheckStatus.FAIL -> "!"
                 }
                 Row(
                     modifier = Modifier
@@ -210,7 +212,7 @@ fun ReviewScreen(
                 onClick = onRetake,
                 modifier = Modifier.weight(1f),
             ) {
-                Text("Retake")
+                Text(retakeLabel)
             }
             Button(
                 onClick = onContinue,

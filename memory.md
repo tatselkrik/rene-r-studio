@@ -27,3 +27,19 @@
 ## 2026-09-23
 
 - Kirk confirmed v1.0.5 works and authorized publication after comparing A14 5G and S24 FE framing. The candidate replaces the raw-buffer/file transform and smaller-side selection with normalized guide mapping into the upright JPEG, relying on CameraX's existing shared viewport. Keep proportion-mismatch rejection and orientation/resolution tests. Phone results support the correction; the exact device-internal cause was not independently measured.
+
+## 2026-09-26
+
+- Kirk requested phone-file import and choosing an individual from a group photo, and explicitly chose an adjustable square crop. Retain the source group for selecting another person; preserve manual headroom and the narrower passport preview. Face detection offers starting suggestions, while final single-person and quality checks apply to the selected crop. Decode that region from the original source rather than enlarging a downsampled overview. Keep camera framing and printer calibration unchanged.
+
+## 2026-09-28
+
+- Kirk requested Single/Group camera modes and automatic phone-album saving of every camera original before continuing into editing. Single preserves the existing camera-square flow; Group saves the full frame and opens person selection without a second file-picking step. Gallery originals survive Retake and reframing. Kirk confirmed removing final-sheet Save and keeping Share, Back and Print. This supersedes the earlier candidate's final Save action; imported files need no duplicate gallery copy.
+
+## 2026-09-29
+
+- Kirk requested full-size Single/Group camera buttons without the helper paragraphs, Open Photo naming, and a standard Choose another photo button. For manually selected crops, low source resolution is an advisory warning rather than a printing block; retain face, framing and sharpness checks, and do not enlarge source pixels to claim better resolution.
+
+## 2026-10-02
+
+- Kirk authorized Git publication of v1.0.6 build 9 and requested a complete README update. Preserve the exact prepared APK. His publication approval supersedes the pending authorization state; do not infer detailed physical test results beyond what he reported.

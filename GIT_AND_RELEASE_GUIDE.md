@@ -2,7 +2,9 @@
 
 ## What Git Does
 
-Git preserves named snapshots of the source code. It works locally and does not require an account or internet connection. The stable version lives on the `main` branch, and the approved current release is `v1.0.5`. Earlier version tags remain preserved.
+Git preserves named snapshots of the source code. It works locally and does not require an account or internet connection. The stable version lives on the `main` branch, and the approved current release is `v1.0.6`. Earlier version tags remain preserved.
+
+The v1.0.6 release uses versionCode 9 and includes photo import, Single/Group capture, automatic saving of camera originals, and adjustable person selection. Kirk authorized publication on October 2, 2026. Preserve the exact build 9 APK and signing identity for this release.
 
 Useful commands in Android Studio's Terminal:
 
@@ -33,7 +35,7 @@ git switch main
 git merge codex/short-feature-name
 ```
 
-For the next release, choose the new `versionName`, increase `versionCode` above `6`, build the installer with the same signing key, and add a matching Git tag only after testing passes.
+For the next release, choose the new `versionName`, increase `versionCode` above `9`, build the installer with the same signing key, and add a matching Git tag only after testing passes.
 
 ## Local Git Versus Backup
 
