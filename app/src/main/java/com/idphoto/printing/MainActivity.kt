@@ -67,6 +67,8 @@ class MainActivity : ComponentActivity() {
 }
 
 private enum class WorkflowScreen {
+    HOME,
+    LANDSCAPE,
     CAPTURE,
     SAVE_CAPTURE,
     IMPORT,
@@ -89,7 +91,8 @@ private fun IdPhotoWorkflow() {
     }
     val analyzer = remember { PhotoAnalyzer(context) }
     val backgroundWhitener = remember { BackgroundWhitener() }
-    var screen by remember { mutableStateOf(WorkflowScreen.CAPTURE) }
+    var screen by remember { mutableStateOf(WorkflowScreen.HOME) }
+    var printerReturn by remember { mutableStateOf(WorkflowScreen.HOME) }
     var capturedPhoto by remember { mutableStateOf<CapturedPhoto?>(null) }
     var pendingCapture by remember { mutableStateOf<CapturedPhoto?>(null) }
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -267,9 +270,11 @@ private fun IdPhotoWorkflow() {
         screen = if (importedPhoto != null) WorkflowScreen.IMPORT else WorkflowScreen.CAPTURE
     }
 
-    BackHandler(enabled = screen != WorkflowScreen.CAPTURE) {
+    BackHandler(enabled = screen != WorkflowScreen.HOME && screen != WorkflowScreen.LANDSCAPE) {
         when (screen) {
-            WorkflowScreen.CAPTURE -> Unit
+            WorkflowScreen.HOME -> Unit
+            WorkflowScreen.LANDSCAPE -> Unit
+            WorkflowScreen.CAPTURE -> screen = WorkflowScreen.HOME
             WorkflowScreen.SAVE_CAPTURE -> Unit
             WorkflowScreen.IMPORT -> {
                 ++importGeneration
@@ -285,11 +290,17 @@ private fun IdPhotoWorkflow() {
             WorkflowScreen.REVIEW -> retake()
             WorkflowScreen.COMBINATION -> screen = WorkflowScreen.REVIEW
             WorkflowScreen.PREVIEW -> screen = WorkflowScreen.COMBINATION
-            WorkflowScreen.PRINTER_SETUP -> screen = WorkflowScreen.CAPTURE
+            WorkflowScreen.PRINTER_SETUP -> screen = printerReturn
         }
     }
 
     when (screen) {
+        WorkflowScreen.HOME -> com.idphoto.printing.ui.PrintModeScreen(
+            onIdPhoto = { screen = WorkflowScreen.CAPTURE },
+            onLandscape = { screen = WorkflowScreen.LANDSCAPE },
+            onPrinterSetup = { printerReturn = WorkflowScreen.HOME; screen = WorkflowScreen.PRINTER_SETUP },
+        )
+        WorkflowScreen.LANDSCAPE -> com.idphoto.printing.ui.LandscapePhotoScreen(printerConnection) { screen = WorkflowScreen.HOME }
         WorkflowScreen.CAPTURE -> CaptureScreen(
             printerState = printerState,
             onCaptured = { capture ->
@@ -297,6 +308,7 @@ private fun IdPhotoWorkflow() {
                 screen = WorkflowScreen.SAVE_CAPTURE
             },
             onPrinterSetup = {
+                printerReturn = WorkflowScreen.CAPTURE
                 screen = WorkflowScreen.PRINTER_SETUP
             },
             onChoosePhoto = { picker.launch(arrayOf("image/*")) },
@@ -390,7 +402,7 @@ private fun IdPhotoWorkflow() {
         )
         WorkflowScreen.PRINTER_SETUP -> PrinterSetupScreen(
             printerConnection = printerConnection,
-            onBack = { screen = WorkflowScreen.CAPTURE },
+            onBack = { screen = printerReturn },
         )
     }
 }

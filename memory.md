@@ -43,3 +43,12 @@
 ## 2026-10-02
 
 - Kirk authorized Git publication of v1.0.6 build 9 and requested a complete README update. Preserve the exact prepared APK. His publication approval supersedes the pending authorization state; do not infer detailed physical test results beyond what he reported.
+
+## 2026-10-13
+
+- Kirk requested a remembered Matte/Glossy choice in Printer Setup, applicable to both print modes. Keep current color correction for now; glossy-specific calibration is deferred.
+- Add an opening choice of ID Photo or Landscape Photo. Landscape uses an existing customer image with a movable, zoomable 7:5 crop filling a borderless 5x7 sheet. Keep the existing ID layouts/checks separate. Crop to fill rather than letterbox, and request actual zero printer margins. Final proof of paper handling and borderless edges is a physical print test; prepare an APK before new publication approval.
+- Kirk clarified that background replacement belongs only to IDs. Landscape must hide Background and retain the original scene, while keeping Auto and the five existing adjustment sliders for preview, sharing and printing.
+- Kirk added landscape camera capture with automatic original saving, requested stable crop controls when the resolution warning appears, and asked to put the remembered Matte/Glossy choice immediately before Print in both workflows. ID photo processing remains the v1.0.6 baseline; the final preview gains the shared paper choice.
+- Kirk renamed the displayed app to Rene'R Studio. Preserve the existing application identifier and signing key so it updates the installed app; retain previous named releases. He explicitly requested screenshot-based layout checks before handing over the APK.
+- Kirk subsequently explicitly authorized GitHub publication of v1.0.7 build 11 and requested documentation modeled on HPC: a current collapsible screenshot tour, versioned user guide and complete release log. This supersedes the earlier pending publication state; no new physical landscape-print success was reported. Use reviewed demonstration images rather than customer photos in the public gallery.

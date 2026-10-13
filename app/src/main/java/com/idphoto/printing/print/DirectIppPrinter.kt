@@ -38,6 +38,8 @@ data class DirectPrinterProfile(
     val certificateSha256: String? = null,
     val supportsJpeg: Boolean = true,
     val reportedFiveBySeven: Boolean = true,
+    val glossyMediaType: String? = null,
+    val borderlessMediaKeyword: String? = null,
 ) {
     val addressLabel: String
         get() = if (port == DEFAULT_IPP_PORT) host else "$host:$port"
@@ -72,6 +74,14 @@ object DirectPrinterSettings {
     private const val KEY_JPEG = "supports_jpeg"
     private const val KEY_5X7 = "reports_5x7"
 
+    fun loadPaper(context: Context): PaperType = PaperType.fromSaved(
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).getString("paper_choice", null))
+
+    fun savePaper(context: Context, paper: PaperType) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit()
+            .putString("paper_choice", paper.name).apply()
+    }
+
     fun load(context: Context): DirectPrinterProfile? {
         val values = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
         val host = values.getString(KEY_HOST, null)?.takeIf(String::isNotBlank) ?: return null
@@ -103,6 +113,8 @@ object DirectPrinterSettings {
             // L15150's advertised direct document format, so migrate them on load.
             supportsJpeg = values.getBoolean(KEY_JPEG, true),
             reportedFiveBySeven = values.getBoolean(KEY_5X7, true),
+            glossyMediaType = values.getString("glossy_media_type", null),
+            borderlessMediaKeyword = values.getString("borderless_media", null),
         )
     }
 
@@ -121,6 +133,8 @@ object DirectPrinterSettings {
             .putInt(KEY_MEDIA_PROFILE_VERSION, CURRENT_MEDIA_PROFILE_VERSION)
             .putBoolean(KEY_JPEG, profile.supportsJpeg)
             .putBoolean(KEY_5X7, profile.reportedFiveBySeven)
+            .putString("glossy_media_type", profile.glossyMediaType)
+            .putString("borderless_media", profile.borderlessMediaKeyword)
             .apply()
     }
 }
@@ -198,6 +212,8 @@ object DirectIppPrinter {
                         it.equals(DirectPrinterProfile.JPEG_MIME_TYPE, ignoreCase = true)
                     },
                     reportedFiveBySeven = fiveBySeven != null,
+                    glossyMediaType = selectGlossyPhotoMediaType(mediaTypes),
+                    borderlessMediaKeyword = media.firstOrNull { "5x7" in it.lowercase() && "borderless" in it.lowercase() },
                 )
             } catch (error: Exception) {
                 lastError = error
@@ -217,6 +233,8 @@ object DirectIppPrinter {
         profile: DirectPrinterProfile,
         jpeg: File,
         jobName: String,
+        paperType: PaperType = PaperType.MATTE,
+        borderlessLandscape: Boolean = false,
     ): DirectPrintResult {
         require(jpeg.isFile && jpeg.length() > 0L) { "The print JPEG is missing or empty." }
         if (!profile.supportsJpeg) {
@@ -240,34 +258,13 @@ object DirectIppPrinter {
             useTls = profile.useTls,
             certificateSha256 = profile.certificateSha256,
         )
-        val mediaAttribute = Types.mediaCol.of(
-            MediaCol().apply {
-                mediaSizeName = KeywordOrName(profile.mediaKeyword)
-                mediaSource = KeywordOrName(profile.mediaSource)
-                mediaType = KeywordOrName(profile.mediaType)
-            },
-        )
-        val jobAttributes = mutableListOf<Attribute<*>>(
-            mediaAttribute,
-            Types.orientationRequested.of(Orientation.portrait),
-            Types.printQuality.of(PrintQuality.high),
-            Types.printColorMode.of("color"),
-            Types.sides.of("one-sided"),
-            Types.printScaling.of("fill"),
-            Types.copies.of(1),
-        )
-        val request = IppPacket.printJob(endpoint.ippUri)
-            .putOperationAttributes(
-                Types.documentFormat.of(DirectPrinterProfile.JPEG_MIME_TYPE),
-                Types.requestingUserName.of("ID Photo Print"),
-                Types.jobName.of(jobName),
-                Types.ippAttributeFidelity.of(false),
-            )
-            .putJobAttributes(jobAttributes)
-            .build()
+        val request = buildDirectPrintRequest(profile, jobName, paperType, borderlessLandscape)
         val response = post(endpoint, request, jpeg, 120_000)
         ensureSuccessful(response)
         val jobId = response.getValue(Tag.jobAttributes, Types.jobId)
+        if (borderlessLandscape && response.status.code != 0) {
+            return DirectPrintResult("The job was accepted, but the printer could not confirm every borderless setting. Check the printed edges before printing another copy.", jobId)
+        }
         return DirectPrintResult(
             message = if (jobId == null) {
                 "The print job was sent to ${profile.displayName}."

@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.idphoto.printing.print.PaperType
 import com.idphoto.printing.print.DirectPrinterSettings
 import com.idphoto.printing.print.EpsonPrinterDiscovery
 import com.idphoto.printing.print.PrinterConnection
@@ -106,6 +107,17 @@ fun PrinterSetupScreen(printerConnection: PrinterConnection, onBack: () -> Unit)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Text("Paper type", style = MaterialTheme.typography.titleMedium)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PaperType.entries.forEach { paper ->
+                    androidx.compose.material3.FilterChip(
+                        selected = connectionState.paperType == paper,
+                        onClick = { scope.launch { printerConnection.selectPaper(paper) } },
+                        enabled = !working, modifier = Modifier.weight(1f),
+                        label = { Text(paper.label) },
+                    )
+                }
+            }
             Surface(
                 shape = RoundedCornerShape(18.dp),
                 color = WarmWhite,
@@ -161,14 +173,14 @@ fun PrinterSetupScreen(printerConnection: PrinterConnection, onBack: () -> Unit)
                             )
                         }
                         Text(
-                            "Paper: Cassette 1 - RC Woven matte photo",
+                            "Paper: Cassette 1 — ${connectionState.paperType.label}",
                             modifier = Modifier.fillMaxWidth(),
                             style = MaterialTheme.typography.bodySmall,
                             color = Muted,
                             textAlign = TextAlign.Center,
                         )
                         Text(
-                            "Size correction: automatic for L15150 / RC Woven matte",
+                            "ID size correction: L15150 / RC Woven preset",
                             modifier = Modifier.fillMaxWidth(),
                             style = MaterialTheme.typography.bodySmall,
                             color = Muted,

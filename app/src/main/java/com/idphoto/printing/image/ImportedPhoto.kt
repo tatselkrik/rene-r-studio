@@ -77,10 +77,12 @@ object PhotoImporter {
 
     /** Decode only the selected source region, keeping small faces at source resolution. */
     @Suppress("DEPRECATION")
-    suspend fun crop(context: Context, photo: ImportedPhoto, square: FloatRect): File =
+    suspend fun crop(context: Context, photo: ImportedPhoto, square: FloatRect, squareOnly: Boolean = true): File =
         withContext(Dispatchers.IO) {
             require(square.width >= 1f && square.height >= 1f) { "Select a valid crop." }
-            val raw = ImportCrop.toEncoded(ImportCrop.pixelSquare(photo.size, square), photo.encodedSize, photo.orientation)
+            require(square.left >= 0 && square.top >= 0 && square.right <= photo.size.width + 0.01f && square.bottom <= photo.size.height + 0.01f) { "The crop must stay inside the photo." }
+            val uprightCrop = if (squareOnly) ImportCrop.pixelSquare(photo.size, square) else square
+            val raw = ImportCrop.toEncoded(uprightCrop, photo.encodedSize, photo.orientation)
             val region = Rect(floor(raw.left).toInt().coerceAtLeast(0),
                 floor(raw.top).toInt().coerceAtLeast(0),
                 ceil(raw.right).toInt().coerceAtMost(photo.encodedSize.width),

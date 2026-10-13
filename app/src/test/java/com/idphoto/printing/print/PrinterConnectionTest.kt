@@ -9,6 +9,26 @@ import org.junit.Test
 class PrinterConnectionTest {
     private val original = DirectPrinterProfile(host = "printer.test", certificateSha256 = "original-pin")
 
+    @Test fun `saved paper choice survives reconnect and offline recovery`() = runBlocking {
+        var paper = PaperType.GLOSSY
+        var online = true
+        val connection = PrinterConnection(load = { original }, save = {}, discover = { original.probeAddress() },
+            loadPaper = { paper }, savePaper = { paper = it }, probe = { _, _ ->
+                if (!online) throw IOException("Offline")
+                original
+            })
+        connection.refresh()
+        assertEquals(PaperType.GLOSSY, connection.state.value.paperType)
+        online = false
+        connection.refresh()
+        assertEquals(PaperType.GLOSSY, connection.state.value.paperType)
+        connection.selectPaper(PaperType.MATTE)
+        assertEquals(PaperType.MATTE, paper)
+        online = true
+        connection.refresh()
+        assertEquals(PaperType.MATTE, connection.state.value.paperType)
+    }
+
     @Test fun `startup checks saved printer with its pin without discovery`() = runBlocking {
         var stored: DirectPrinterProfile? = original
         val connection = PrinterConnection({ stored }, { stored = it }, { error("Unexpected discovery") }) { address, pin ->

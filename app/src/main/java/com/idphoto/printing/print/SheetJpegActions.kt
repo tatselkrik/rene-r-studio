@@ -7,7 +7,7 @@ import androidx.core.content.FileProvider
 import java.io.File
 
 object SheetJpegActions {
-    fun share(context: Context, jpeg: File) {
+    fun share(context: Context, jpeg: File, title: String = "Share 5 x 7 ID photo sheet") {
         val uri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
@@ -19,6 +19,6 @@ object SheetJpegActions {
             clipData = ClipData.newRawUri(jpeg.name, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(send, "Share 5 x 7 ID photo sheet"))
+        context.startActivity(Intent.createChooser(send, title))
     }
 }

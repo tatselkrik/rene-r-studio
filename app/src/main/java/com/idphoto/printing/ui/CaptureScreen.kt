@@ -2,6 +2,7 @@ package com.idphoto.printing.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -48,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -82,6 +84,7 @@ fun CaptureScreen(
     onCaptured: (CapturedPhoto) -> Unit,
     onPrinterSetup: () -> Unit,
     onChoosePhoto: () -> Unit,
+    landscape: Boolean = false,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -92,7 +95,7 @@ fun CaptureScreen(
         )
     }
     var isCapturing by remember { mutableStateOf(false) }
-    var groupMode by remember { mutableStateOf(false) }
+    var groupMode by remember { mutableStateOf(landscape) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -115,6 +118,8 @@ fun CaptureScreen(
         onDispose { controller.unbind() }
     }
 
+    BackHandler(enabled = landscape && isCapturing) { }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -125,7 +130,8 @@ fun CaptureScreen(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
-                    .aspectRatio(3f / 4f),
+                    .aspectRatio(if (landscape) 7f / 5f else 3f / 4f)
+                    .then(if (landscape) Modifier.clipToBounds() else Modifier),
             ) {
                 androidx.compose.ui.viewinterop.AndroidView(
                     factory = { viewContext ->
@@ -160,7 +166,8 @@ fun CaptureScreen(
                     .padding(horizontal = 20.dp, vertical = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (landscape) Text("Landscape Photo", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     listOf(false to "Single", true to "Group").forEach { (group, label) ->
                         OutlinedButton(
                             onClick = { groupMode = group },
@@ -232,7 +239,7 @@ fun CaptureScreen(
                         val captureDir = File(context.cacheDir, "captures").apply { mkdirs() }
                         val photoFile = File(
                             captureDir,
-                            "id-photo-${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(8)}.jpg",
+                            "${if (landscape) "landscape-photo" else "id-photo"}-${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(8)}.jpg",
                         )
                         val metadata = ImageCapture.Metadata().apply {
                             setReversedHorizontal(false)
@@ -321,7 +328,7 @@ fun CaptureScreen(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.78f)),
                 ) {
-                    Text("Printer Setup", fontWeight = FontWeight.SemiBold)
+                    Text(if (landscape) "Back" else "Printer Setup", fontWeight = FontWeight.SemiBold)
                 }
             }
         }

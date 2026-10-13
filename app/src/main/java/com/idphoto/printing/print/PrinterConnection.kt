@@ -24,6 +24,7 @@ data class PrinterConnectionState(
     val profile: DirectPrinterProfile? = null,
     val checking: Boolean = false,
     val message: String = "Checking printer…",
+    val paperType: PaperType = PaperType.MATTE,
 )
 
 /** Shared by capture, setup and preview so they never hold separate saved profiles. */
@@ -31,14 +32,16 @@ class PrinterConnection(
     private val load: () -> DirectPrinterProfile?,
     private val save: (DirectPrinterProfile) -> Unit,
     private val discover: suspend () -> String,
+    private val loadPaper: () -> PaperType = { PaperType.MATTE },
+    private val savePaper: (PaperType) -> Unit = {},
     private val probe: suspend (String, String?) -> DirectPrinterProfile,
 ) {
     private val mutex = Mutex()
-    private val mutableState = MutableStateFlow(PrinterConnectionState())
+    private val mutableState = MutableStateFlow(PrinterConnectionState(paperType = loadPaper()))
     val state = mutableState.asStateFlow()
 
     suspend fun refresh() = mutex.withLock {
-        mutableState.value = PrinterConnectionState(checking = true)
+        mutableState.value = PrinterConnectionState(checking = true, paperType = mutableState.value.paperType)
         try {
             val saved = load()
             // A legacy plain-IPP profile must be explicitly paired securely once.
@@ -62,29 +65,36 @@ class PrinterConnection(
             }
             accept(connected)
         } catch (cancelled: CancellationException) {
-            mutableState.value = PrinterConnectionState(message = "Printer check paused")
+            mutableState.value = PrinterConnectionState(message = "Printer check paused", paperType = mutableState.value.paperType)
             throw cancelled
         } catch (error: Exception) {
             mutableState.value = PrinterConnectionState(
                 message = error.message ?: "Printer unavailable. Check Wi-Fi and power.",
+                paperType = mutableState.value.paperType,
             )
         }
     }
 
     /** Explicit setup may establish a new trust-on-first-use certificate. */
     suspend fun connect(address: String): DirectPrinterProfile = mutex.withLock {
-        mutableState.value = PrinterConnectionState(checking = true)
+        mutableState.value = PrinterConnectionState(checking = true, paperType = mutableState.value.paperType)
         try {
             probe(address, null).also(::accept)
         } catch (cancelled: CancellationException) {
-            mutableState.value = PrinterConnectionState(message = "Printer check paused")
+            mutableState.value = PrinterConnectionState(message = "Printer check paused", paperType = mutableState.value.paperType)
             throw cancelled
         } catch (error: Exception) {
             mutableState.value = PrinterConnectionState(
                 message = error.message ?: "Could not connect securely.",
+                paperType = mutableState.value.paperType,
             )
             throw error
         }
+    }
+
+    suspend fun selectPaper(paper: PaperType) = mutex.withLock {
+        savePaper(paper)
+        mutableState.value = mutableState.value.copy(paperType = paper)
     }
 
     private fun accept(profile: DirectPrinterProfile) {
@@ -92,7 +102,7 @@ class PrinterConnection(
             throw IOException("The printer must support encrypted JPEG printing on 5 × 7 paper.")
         }
         save(profile)
-        mutableState.value = PrinterConnectionState(profile = profile, message = "Printer ready")
+        mutableState.value = PrinterConnectionState(profile = profile, message = "Printer ready", paperType = mutableState.value.paperType)
     }
 
     companion object {
@@ -102,6 +112,8 @@ class PrinterConnection(
                 load = { DirectPrinterSettings.load(app) },
                 save = { DirectPrinterSettings.save(app, it) },
                 discover = { EpsonPrinterDiscovery.find(app).probeAddress },
+                loadPaper = { DirectPrinterSettings.loadPaper(app) },
+                savePaper = { DirectPrinterSettings.savePaper(app, it) },
                 probe = { address, certificate ->
                     withContext(Dispatchers.IO) {
                         DirectIppPrinter.probe(address, certificate, tryStandardPaths = false)

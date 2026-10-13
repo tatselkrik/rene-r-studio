@@ -220,6 +220,9 @@ fun SheetPreviewScreen(
             }
         }
 
+        PaperTypeChoice(printerState.paperType, !isBusy && !printerState.checking) { paper ->
+            scope.launch { printerConnection.selectPaper(paper) }
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -251,6 +254,7 @@ fun SheetPreviewScreen(
                                     profile = printer,
                                     jpeg = jpeg,
                                     jobName = "ID photo 5x7 sheet",
+                                    paperType = printerConnection.state.value.paperType,
                                 )
                             }
                             printFailed = false

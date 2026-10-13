@@ -145,8 +145,8 @@ try {
         throw "The APK package, release version, or non-debuggable status did not match."
     }
     $releaseDirectory = Join-Path $projectRoot "release"
-    $alignedApk = Join-Path $releaseDirectory "ReneR-ID-Print-v$versionName-aligned-unsigned.apk"
-    $signedApk = Join-Path $releaseDirectory "ReneR-ID-Print-v$versionName.apk"
+    $alignedApk = Join-Path $releaseDirectory "ReneR-Studio-v$versionName-aligned-unsigned.apk"
+    $signedApk = Join-Path $releaseDirectory "ReneR-Studio-v$versionName.apk"
     New-Item -ItemType Directory -Force -Path $releaseDirectory | Out-Null
 
     & (Join-Path $buildToolsDirectory.FullName "zipalign.exe") `
@@ -185,17 +185,17 @@ try {
     }
     $verification | Select-String '^Verifies|^Verified using|^Number of signers'
 
-    $previousApk = Get-ChildItem -LiteralPath $releaseDirectory -Filter 'ReneR-ID-Print-v*.apk' |
+    $previousApk = Get-ChildItem -LiteralPath $releaseDirectory -Filter 'ReneR-*.apk' |
         Where-Object {
-            $_.BaseName -match '^ReneR-ID-Print-v(\d+\.\d+\.\d+)$' -and
+            $_.BaseName -match '^ReneR-(?:ID-Print|Studio)-v(\d+\.\d+\.\d+)$' -and
             [version]$Matches[1] -lt [version]$versionName
         } |
-        Sort-Object { [version]($_.BaseName -replace '^ReneR-ID-Print-v', '') } -Descending |
+        Sort-Object { [version]($_.BaseName -replace '^ReneR-(?:ID-Print|Studio)-v', '') } -Descending |
         Select-Object -First 1
     # v1.0.3 is the explicitly approved signing migration. Later versions must
     # retain the automatic identity and update it without an uninstall.
     if ($null -ne $previousApk -and
-        [version]($previousApk.BaseName -replace '^ReneR-ID-Print-v', '') -ge [version]'1.0.3') {
+        [version]($previousApk.BaseName -replace '^ReneR-(?:ID-Print|Studio)-v', '') -ge [version]'1.0.3') {
         $signer = Join-Path $buildToolsDirectory.FullName "apksigner.bat"
         $previousCertificate = @(& $signer verify --print-certs $previousApk.FullName |
             Select-String 'certificate SHA-256 digest: ([0-9a-fA-F]{64})$' |
