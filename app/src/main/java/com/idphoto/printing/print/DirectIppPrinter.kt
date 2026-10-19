@@ -42,7 +42,10 @@ data class DirectPrinterProfile(
     val borderlessMediaKeyword: String? = null,
 ) {
     val addressLabel: String
-        get() = if (port == DEFAULT_IPP_PORT) host else "$host:$port"
+        get() {
+            val addressHost = if (':' in host && !host.startsWith('[')) "[$host]" else host
+            return if (port == DEFAULT_IPP_PORT) addressHost else "$addressHost:$port"
+        }
     val readyForDirectPrint: Boolean
         get() = useTls && !certificateSha256.isNullOrBlank() &&
             supportsJpeg &&

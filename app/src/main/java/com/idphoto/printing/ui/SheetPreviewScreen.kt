@@ -50,6 +50,7 @@ import com.idphoto.printing.print.PrinterConnectionState
 import com.idphoto.printing.print.PhotoColorTone
 import com.idphoto.printing.print.SheetJpegActions
 import com.idphoto.printing.print.SheetJpegGenerator
+import com.idphoto.printing.print.createShareJpeg
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
@@ -79,18 +80,26 @@ fun SheetPreviewScreen(
     BackHandler(enabled = isBusy) { }
 
     suspend fun prepareJpeg(
-        fileName: String = "id-photo-5x7-share.jpg",
+        fileName: String? = null,
         printScale: PrintScale = PrintScale.IDENTITY,
         photoColorTone: PhotoColorTone = PhotoColorTone.NEUTRAL,
     ): File = withContext(Dispatchers.IO) {
-        SheetJpegGenerator.generate(
-            outputFile = File(context.cacheDir, "print/$fileName"),
-            bitmap = bitmap,
-            review = review,
-            combination = combination,
-            printScale = printScale,
-            photoColorTone = photoColorTone,
-        )
+        val directory = File(context.cacheDir, "print")
+        val outputFile = if (fileName == null) createShareJpeg(directory, "id-photo-5x7-share-")
+            else File(directory, fileName)
+        try {
+            SheetJpegGenerator.generate(
+                outputFile = outputFile,
+                bitmap = bitmap,
+                review = review,
+                combination = combination,
+                printScale = printScale,
+                photoColorTone = photoColorTone,
+            )
+        } catch (error: Exception) {
+            outputFile.delete()
+            throw error
+        }
     }
 
     Column(

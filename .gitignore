@@ -13,3 +13,4 @@ keystore.properties
 signing.properties
 private-signing/
 release/
+work/

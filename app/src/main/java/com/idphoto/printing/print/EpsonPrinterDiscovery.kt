@@ -9,7 +9,12 @@ import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+
+/** Only our own deadline is a connection failure; the caller's cancellation still propagates. */
+internal suspend fun <T : Any> withDiscoveryTimeout(timeoutMs: Long, action: suspend () -> T): T =
+    withTimeoutOrNull(timeoutMs) { action() }
+        ?: throw IOException("Printer search timed out. Check Wi-Fi and try again.")
 
 data class DiscoveredPrinter(
     val serviceName: String,
@@ -29,7 +34,7 @@ object EpsonPrinterDiscovery {
     private const val SEARCH_TIMEOUT_MS = 8_000L
 
     @Suppress("DEPRECATION")
-    suspend fun find(context: Context): DiscoveredPrinter = withTimeout(SEARCH_TIMEOUT_MS + 2_000L) {
+    suspend fun find(context: Context): DiscoveredPrinter = withDiscoveryTimeout(SEARCH_TIMEOUT_MS + 2_000L) {
         suspendCancellableCoroutine { continuation ->
             val appContext = context.applicationContext
             val nsdManager = appContext.getSystemService(Context.NSD_SERVICE) as NsdManager

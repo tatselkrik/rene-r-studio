@@ -118,7 +118,7 @@ fun CaptureScreen(
         onDispose { controller.unbind() }
     }
 
-    BackHandler(enabled = landscape && isCapturing) { }
+    BackHandler(enabled = isCapturing) { }
 
     Box(
         modifier = Modifier
@@ -247,41 +247,48 @@ fun CaptureScreen(
                         val options = ImageCapture.OutputFileOptions.Builder(photoFile)
                             .setMetadata(metadata)
                             .build()
-                        controller.takePicture(
-                            options,
-                            ContextCompat.getMainExecutor(context),
-                            object : ImageCapture.OnImageSavedCallback {
-                                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                                    try {
-                                        // LifecycleCameraController binds both use cases to PreviewView's
-                                        // viewport. Saved JPEGs are cropped to it by CameraX; normalize
-                                        // in upright coordinates rather than mixing raw buffer rotations.
-                                        val mapping = if (shotIsGroup) null else runCatching {
-                                            CaptureGuideMapper.map(previewSize, BitmapLoader.uprightSize(photoFile), guide)
+                        try {
+                            controller.takePicture(
+                                options,
+                                ContextCompat.getMainExecutor(context),
+                                object : ImageCapture.OnImageSavedCallback {
+                                    override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                                        try {
+                                            // LifecycleCameraController binds both use cases to PreviewView's
+                                            // viewport. Saved JPEGs are cropped to it by CameraX; normalize
+                                            // in upright coordinates rather than mixing raw buffer rotations.
+                                            val mapping = if (shotIsGroup) null else runCatching {
+                                                CaptureGuideMapper.map(previewSize, BitmapLoader.uprightSize(photoFile), guide)
+                                            }
+                                            isCapturing = false
+                                            onCaptured(
+                                                CapturedPhoto(
+                                                    file = photoFile,
+                                                    cameraSquare = mapping?.getOrNull(),
+                                                    isGroup = shotIsGroup,
+                                                    framingError = mapping?.exceptionOrNull()?.message,
+                                                ),
+                                            )
+                                        } catch (error: Exception) {
+                                            photoFile.delete()
+                                            isCapturing = false
+                                            errorMessage = error.message
+                                                ?: "The square guide could not be matched to the saved photo."
                                         }
-                                        isCapturing = false
-                                        onCaptured(
-                                            CapturedPhoto(
-                                                file = photoFile,
-                                                cameraSquare = mapping?.getOrNull(),
-                                                isGroup = shotIsGroup,
-                                                framingError = mapping?.exceptionOrNull()?.message,
-                                            ),
-                                        )
-                                    } catch (error: Exception) {
+                                    }
+
+                                    override fun onError(exception: ImageCaptureException) {
                                         photoFile.delete()
                                         isCapturing = false
-                                        errorMessage = error.message
-                                            ?: "The square guide could not be matched to the saved photo."
+                                        errorMessage = exception.message ?: "The camera could not save the photo."
                                     }
-                                }
-
-                                override fun onError(exception: ImageCaptureException) {
-                                    isCapturing = false
-                                    errorMessage = exception.message ?: "The camera could not save the photo."
-                                }
-                            },
-                        )
+                                },
+                            )
+                        } catch (error: Exception) {
+                            photoFile.delete()
+                            isCapturing = false
+                            errorMessage = error.message ?: "The camera could not take the photo. Try again."
+                        }
                     },
                     enabled = !isCapturing,
                     modifier = Modifier.weight(1f).height(56.dp),

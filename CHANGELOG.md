@@ -2,6 +2,29 @@
 
 Version milestones are listed below; intermediate development and validation builds are consolidated under their version. Dates use Philippine local time. Versions 1.0.0–1.0.2 are historical Git tags; GitHub APK releases begin at 1.0.3. Earlier notes describe the behavior at the time, including the Rene'R ID Print name and the former Save action.
 
+## 1.0.8 - 2026-10-19
+
+### Privacy and reliability
+
+- Give every shared ID sheet and landscape image a unique file, so a recipient's earlier URI never points to a later export.
+- Report printer-discovery deadlines as ordinary connection failures while preserving caller cancellation.
+- Correct IPv6 printer address labels, already bracketed hosts and escaped IPPS resource paths.
+- Block Back during Single/Group/Landscape capture and recover from synchronous camera submission failures; remove incomplete failed captures.
+- Explicitly exclude private app data from cloud backup and device transfer, with the legacy no-backup setting retained.
+
+### Installer and documentation
+
+- Refuse existing versioned installers before building or opening signing state. Sign and verify a staged candidate before moving it into place without overwrite.
+- Validate APK versionCode as well as versionName, package and non-debuggable status. Add isolated installer-safety checks to CI.
+- Update the README to show only the current version, download, guide and release notes. Use stable screenshot paths and the canonical Rene'R Studio repository address; historical releases and documentation remain preserved.
+- Preserve the application ID, automatic signing identity, dependency baseline, eight layouts and L15150 scale/color calibration. Published build 12.
+
+### Verification scope
+
+- 83 unit tests, release lint/assembly, signed installer identity and update checks, and isolated installer safeguards. Android quality CI must pass on the exact release commit before publication.
+- API 36 emulator checks cover capture with immediate Back, album originals, imported portrait checks, ID/landscape previews and sharing. Two different ID layouts kept distinct export files and preserved the first file's digest. No share recipient or print job was selected.
+- No new physical phone/printer or OEM migration test was performed. Landscape borderless edges, orientation and Matte/Glossy handling still need a physical L15150 sample print. Glossy-specific recalibration remains deferred.
+
 ## 1.0.7 - 2026-10-13
 
 ### Rene'R Studio and landscape photos

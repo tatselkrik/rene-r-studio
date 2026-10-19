@@ -52,3 +52,10 @@
 - Kirk added landscape camera capture with automatic original saving, requested stable crop controls when the resolution warning appears, and asked to put the remembered Matte/Glossy choice immediately before Print in both workflows. ID photo processing remains the v1.0.6 baseline; the final preview gains the shared paper choice.
 - Kirk renamed the displayed app to Rene'R Studio. Preserve the existing application identifier and signing key so it updates the installed app; retain previous named releases. He explicitly requested screenshot-based layout checks before handing over the APK.
 - Kirk subsequently explicitly authorized GitHub publication of v1.0.7 build 11 and requested documentation modeled on HPC: a current collapsible screenshot tour, versioned user guide and complete release log. This supersedes the earlier pending publication state; no new physical landscape-print success was reported. Use reviewed demonstration images rather than customer photos in the public gallery.
+
+## 2026-10-19
+
+- Each Share export must keep its own immutable file and URI. Reusing a shared ID-sheet path can expose a later customer's image through an earlier recipient's still-valid grant; both workflows now allocate unique share files.
+- Signing must preserve existing versioned installers. Refuse an existing destination before building or unlocking the key, check both APK version name and version code, verify the staged candidate, and move it to the final filename without overwrite. The isolated installer-safety script checks these guards without signing or accessing saved keys.
+- Kirk requested a new version and Git updates after the review. Keep the README current-only: remove superseded version numbers, old download/guide links and its historical release table. This supersedes the October 13 README history-table preference; preserve history in CHANGELOG.md, versioned guides, tags and release assets.
+- The canonical public repository is tatselkrik/rene-r-studio. GitHub redirects the former rene-r-id-print address to the same repository; use the canonical name in current links and the Git remote.

@@ -6,6 +6,28 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Assert-InstallerDestinationAvailable([string]$Path) {
+    if (Test-Path -LiteralPath $Path) {
+        throw "An installer already exists at $Path. Preserve it and prepare a new version instead."
+    }
+}
+
+function Move-InstallerWithoutOverwrite([string]$Candidate, [string]$Destination) {
+    # The two-argument move also refuses a destination created after the initial check.
+    [System.IO.File]::Move($Candidate, $Destination)
+}
+
+function Assert-ReleaseApkMetadata([string[]]$Badging, [string]$VersionName, [int]$VersionCode) {
+    $packageLine = [string]($Badging | Where-Object { $_ -cmatch '^package: ' } | Select-Object -First 1)
+    $packageName = [regex]::Match($packageLine, "(?:^|\s)name='([^']*)'").Groups[1].Value
+    $apkVersionName = [regex]::Match($packageLine, "\sversionName='([^']*)'").Groups[1].Value
+    $apkVersionCode = [regex]::Match($packageLine, "\sversionCode='(\d+)'").Groups[1].Value
+    if ($packageName -cne 'com.idphoto.printing' -or $apkVersionName -cne $VersionName -or
+        $apkVersionCode -cne [string]$VersionCode -or ($Badging -cmatch '^application-debuggable')) {
+        throw "The APK package, version name/code, or non-debuggable status did not match."
+    }
+}
+
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $androidStudioJbr = "C:\Program Files\Android\Android Studio\jbr"
 $keytool = Join-Path $androidStudioJbr "bin\keytool.exe"
@@ -15,6 +37,23 @@ $passwordPath = Join-Path $keystoreDirectory "password.dpapi"
 $certificatePath = Join-Path $keystoreDirectory "certificate.sha256"
 $keyAlias = "rene-r-id-print"
 $passwordVariable = "RENER_SIGNING_PASSWORD"
+
+$buildFile = Join-Path $projectRoot "app\build.gradle.kts"
+$versionMatch = Select-String -LiteralPath $buildFile -Pattern 'versionName\s*=\s*"([^"]+)"' |
+    Select-Object -First 1
+$codeMatch = Select-String -LiteralPath $buildFile -Pattern 'versionCode\s*=\s*(\d+)' |
+    Select-Object -First 1
+if ($null -eq $versionMatch -or $null -eq $codeMatch) {
+    throw "The Android version name/code could not be read."
+}
+$versionName = $versionMatch.Matches[0].Groups[1].Value
+$versionCode = [int]$codeMatch.Matches[0].Groups[1].Value
+$releaseDirectory = Join-Path $projectRoot "release"
+$signedApk = Join-Path $releaseDirectory "ReneR-Studio-v$versionName.apk"
+# Fail before a build or key access can disturb an already tested version.
+Assert-InstallerDestinationAvailable $signedApk
+$stagingDirectory = $null
+$stagingCreated = $false
 
 if (-not (Test-Path -LiteralPath $keytool)) {
     throw "Android Studio's signing tool was not found at $keytool"
@@ -128,26 +167,18 @@ try {
         throw "Android SDK Build-Tools with zipalign and apksigner were not found."
     }
 
-    $versionMatch = Select-String `
-        -Path (Join-Path $projectRoot "app\build.gradle.kts") `
-        -Pattern 'versionName\s*=\s*"([^"]+)"' |
-        Select-Object -First 1
-    if ($null -eq $versionMatch) {
-        throw "The Android version name could not be read."
-    }
-    $versionName = $versionMatch.Matches[0].Groups[1].Value
     $unsignedApk = Join-Path $projectRoot "app\build\outputs\apk\release\app-release-unsigned.apk"
     $badging = & (Join-Path $buildToolsDirectory.FullName "aapt.exe") dump badging $unsignedApk
-    if ($LASTEXITCODE -ne 0 -or
-        -not ($badging | Select-String -SimpleMatch "name='com.idphoto.printing'") -or
-        -not ($badging | Select-String -SimpleMatch "versionName='$versionName'") -or
-        ($badging | Select-String -SimpleMatch 'application-debuggable')) {
-        throw "The APK package, release version, or non-debuggable status did not match."
+    if ($LASTEXITCODE -ne 0) {
+        throw "The APK metadata could not be read."
     }
-    $releaseDirectory = Join-Path $projectRoot "release"
-    $alignedApk = Join-Path $releaseDirectory "ReneR-Studio-v$versionName-aligned-unsigned.apk"
-    $signedApk = Join-Path $releaseDirectory "ReneR-Studio-v$versionName.apk"
+    Assert-ReleaseApkMetadata $badging $versionName $versionCode
     New-Item -ItemType Directory -Force -Path $releaseDirectory | Out-Null
+    $stagingDirectory = Join-Path $releaseDirectory (".signing-" + [guid]::NewGuid().ToString('N'))
+    $alignedApk = Join-Path $stagingDirectory "aligned-unsigned.apk"
+    $candidateApk = Join-Path $stagingDirectory "signed.apk"
+    New-Item -ItemType Directory -Path $stagingDirectory | Out-Null
+    $stagingCreated = $true
 
     & (Join-Path $buildToolsDirectory.FullName "zipalign.exe") `
         -f -p 4 $unsignedApk $alignedApk
@@ -164,14 +195,14 @@ try {
         --v1-signing-enabled true `
         --v2-signing-enabled true `
         --v3-signing-enabled true `
-        --out $signedApk `
+        --out $candidateApk `
         $alignedApk
     if ($LASTEXITCODE -ne 0) {
         throw "The saved automatic signing credential could not sign the installer. Preserve the key and restore its matching credential."
     }
 
     $verification = & (Join-Path $buildToolsDirectory.FullName "apksigner.bat") verify `
-        --verbose --print-certs $signedApk
+        --verbose --print-certs $candidateApk
     if ($LASTEXITCODE -ne 0) {
         throw "The signed installer did not pass verification."
     }
@@ -204,7 +235,7 @@ try {
         if ($LASTEXITCODE -ne 0 -or $previousCertificate.Count -ne 1) {
             throw "The previous APK signature could not be verified."
         }
-        $currentCertificate = @(& $signer verify --print-certs $signedApk |
+        $currentCertificate = @(& $signer verify --print-certs $candidateApk |
             Select-String 'certificate SHA-256 digest: ([0-9a-fA-F]{64})$' |
             ForEach-Object { $_.Matches[0].Groups[1].Value.ToLowerInvariant() } |
             Sort-Object -Unique)
@@ -214,7 +245,7 @@ try {
         }
     }
 
-    Remove-Item -LiteralPath $alignedApk -Force
+    Move-InstallerWithoutOverwrite $candidateApk $signedApk
     Write-Host ""
     Write-Host "Version $versionName installer created successfully:" -ForegroundColor Green
     Write-Host $signedApk -ForegroundColor Green
@@ -224,4 +255,13 @@ try {
     Remove-Item -Path "Env:$passwordVariable" -ErrorAction SilentlyContinue
     $password = $null
     if ($null -ne $securePassword) { $securePassword.Dispose() }
+    if ($stagingCreated) {
+        # Only the known files in our freshly created staging directory are removed.
+        foreach ($temporaryFile in @($alignedApk, $candidateApk, "$candidateApk.idsig")) {
+            Remove-Item -LiteralPath $temporaryFile -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $stagingDirectory) {
+            [System.IO.Directory]::Delete($stagingDirectory, $false)
+        }
+    }
 }

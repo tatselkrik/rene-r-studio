@@ -3,6 +3,7 @@ package com.idphoto.printing.print
 import com.hp.jipp.encoding.Tag
 import com.hp.jipp.model.Orientation
 import com.hp.jipp.model.Types
+import java.net.URI
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -46,5 +47,19 @@ class DirectPrintRequestTest {
         assertNull(selectGlossyPhotoMediaType(listOf("photographic-matte", "photographic-semi-glossy")))
         assertEquals(PaperType.MATTE, PaperType.fromSaved(null))
         assertEquals(PaperType.GLOSSY, PaperType.fromSaved("GLOSSY"))
+    }
+
+    @Test fun `IPv6 hosts from discovery and manual URI parsing produce the same printer URI`() {
+        for (host in listOf("2001:db8::1", "[2001:db8::1]")) {
+            val request = buildDirectPrintRequest(profile.copy(host = host), "ID", PaperType.MATTE, false)
+            assertEquals(URI("ipps://[2001:db8::1]:631/ipp/print"),
+                request.getValue(Tag.operationAttributes, Types.printerUri))
+        }
+    }
+
+    @Test fun `printer resource paths are escaped as paths rather than parsed as URI syntax`() {
+        val request = buildDirectPrintRequest(profile.copy(resourcePath = "/ipp/photo queue"), "ID", PaperType.MATTE, false)
+        assertEquals(URI("ipps://printer.test:631/ipp/photo%20queue"),
+            request.getValue(Tag.operationAttributes, Types.printerUri))
     }
 }

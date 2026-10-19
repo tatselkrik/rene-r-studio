@@ -219,7 +219,7 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
             Text(state.message, color = Muted, style = MaterialTheme.typography.bodySmall)
             OutlinedButton({ work {
                 val jpeg = withContext(Dispatchers.IO) {
-                    LandscapeJpegGenerator.generate(File(context.cacheDir, "print/landscape-${System.currentTimeMillis()}.jpg"), requireNotNull(activeBitmap))
+                    LandscapeJpegGenerator.generate(createShareJpeg(File(context.cacheDir, "print"), "landscape-share-"), requireNotNull(activeBitmap))
                 }
                 SheetJpegActions.share(context, jpeg, "Share landscape photo")
             } }, Modifier.fillMaxWidth().height(48.dp), enabled = !busy && adjustmentsReady) { Text("Share") }

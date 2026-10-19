@@ -31,8 +31,8 @@ internal fun buildDirectPrintRequest(profile: DirectPrinterProfile, jobName: Str
             mediaRightMargin = 0
         }
     }
-    val host = if (':' in profile.host) "[${profile.host}]" else profile.host
-    return IppPacket.printJob(URI("ipps://$host:${profile.port}${profile.resourcePath}"))
+    val printerUri = URI("ipps", null, profile.host, profile.port, profile.resourcePath, null, null)
+    return IppPacket.printJob(printerUri)
         .putOperationAttributes(
             Types.documentFormat.of(DirectPrinterProfile.JPEG_MIME_TYPE),
             Types.requestingUserName.of("ID Photo Print"),

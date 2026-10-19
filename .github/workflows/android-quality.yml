@@ -44,5 +44,9 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
+      - name: Check installer safety guards
+        shell: pwsh
+        run: ./tools/test-installer-safety.ps1
+
       - name: Run quality checks
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug --no-daemon --stacktrace

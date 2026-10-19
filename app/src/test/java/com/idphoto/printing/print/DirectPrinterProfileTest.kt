@@ -6,6 +6,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DirectPrinterProfileTest {
+    @Test
+    fun `IPv6 address labels can be pasted back into printer setup`() {
+        assertEquals("[2001:db8::1]", DirectPrinterProfile("2001:db8::1").addressLabel)
+        assertEquals("[2001:db8::1]:8631", DirectPrinterProfile("2001:db8::1", port = 8631).addressLabel)
+        assertEquals("[2001:db8::1]:8631", DirectPrinterProfile("[2001:db8::1]", port = 8631).addressLabel)
+    }
+
     @org.junit.Test
     fun `plaintext and unpinned connections can never print`() {
         org.junit.Assert.assertFalse(DirectPrinterProfile("printer.test", useTls = false).readyForDirectPrint)
