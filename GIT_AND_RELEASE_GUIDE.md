@@ -2,9 +2,9 @@
 
 ## What Git Does
 
-Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Released source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current release is **Rene'R Studio v1.0.8 / versionCode 12**. Earlier tags and release assets remain preserved.
+Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current source/build is **Rene'R Studio v1.0.8 / versionCode 12**. Its signed APK and checksum are local; no v1.0.8 tag or GitHub Release was published. Historical tags and release assets remain preserved.
 
-Kirk requested a new version and Git updates on October 19, 2026. Version 1.0.8 contains the seven completed code-review fixes and uses the existing automatic signing identity. Its local and emulator checks do not establish successful physical landscape printing; keep that limitation in the release notes.
+Kirk requested a new version and Git updates on October 19, 2026, then explicitly chose to keep the APK local. This authorizes the source/documentation update, not a new version tag or public APK release. Version 1.0.8 contains the seven completed code-review fixes and uses the existing automatic signing identity. Its local and emulator checks do not establish successful physical landscape printing; keep that limitation in the release notes.
 
 Version 1.0.8 improves sharing privacy, printer recovery, IPv6 handling, capture recovery, backup exclusions and installer safety. The established ID/landscape workflows and calibration remain preserved. See [CHANGELOG.md](CHANGELOG.md) and the [v1.0.8 user guide](docs/user-guide-v1.0.8.md).
 

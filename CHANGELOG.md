@@ -16,12 +16,12 @@ Version milestones are listed below; intermediate development and validation bui
 
 - Refuse existing versioned installers before building or opening signing state. Sign and verify a staged candidate before moving it into place without overwrite.
 - Validate APK versionCode as well as versionName, package and non-debuggable status. Add isolated installer-safety checks to CI.
-- Update the README to show only the current version, download, guide and release notes. Use stable screenshot paths and the canonical Rene'R Studio repository address; historical releases and documentation remain preserved.
-- Preserve the application ID, automatic signing identity, dependency baseline, eight layouts and L15150 scale/color calibration. Published build 12.
+- Update the README to show only the current version, installation instructions, guide and release notes. Use stable screenshot paths and the canonical Rene'R Studio repository address; historical releases and documentation remain preserved.
+- Preserve the application ID, automatic signing identity, dependency baseline, eight layouts and L15150 scale/color calibration. Build 12 is prepared and signed locally; Git source/documentation are updated. Kirk explicitly chose to keep the APK local, with no new version tag or GitHub Release.
 
 ### Verification scope
 
-- 83 unit tests, release lint/assembly, signed installer identity and update checks, and isolated installer safeguards. Android quality CI must pass on the exact release commit before publication.
+- 83 unit tests, release lint/assembly, signed installer identity and update checks, and isolated installer safeguards. Android quality CI passed on the application-source commit. Documentation updates are checked separately; the signed APK remains local.
 - API 36 emulator checks cover capture with immediate Back, album originals, imported portrait checks, ID/landscape previews and sharing. Two different ID layouts kept distinct export files and preserved the first file's digest. No share recipient or print job was selected.
 - No new physical phone/printer or OEM migration test was performed. Landscape borderless edges, orientation and Matte/Glossy handling still need a physical L15150 sample print. Glossy-specific recalibration remains deferred.
 

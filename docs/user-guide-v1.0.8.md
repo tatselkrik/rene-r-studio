@@ -6,7 +6,7 @@ Rene'R Studio prepares ID sheets and full-page landscape photos on Android, then
 
 ## Install and connect
 
-Install the signed APK from the [v1.0.8 release](https://github.com/tatselkrik/rene-r-studio/releases/tag/v1.0.8). Install it over the existing release to retain settings. The signing identity is unchanged; if Android reports a signature conflict, preserve needed photos and follow the [release guide](../GIT_AND_RELEASE_GUIDE.md).
+Obtain the signed `ReneR-Studio-v1.0.8.apk` and its matching checksum from the maintainer. This build is kept locally rather than uploaded as a GitHub Release. Install it over the existing release to retain settings. The signing identity is unchanged; if Android reports a signature conflict, preserve needed photos and follow the [release guide](../GIT_AND_RELEASE_GUIDE.md).
 
 Connect the phone and printer to the same local network, normally the same Wi-Fi. Internet is not required for local printing. Open the app and wait for **Printer ready**. If automatic discovery cannot pair, open **Printer Setup** and connect by address. Capture and editing remain available while the printer is offline.
 

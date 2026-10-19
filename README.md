@@ -1,13 +1,12 @@
 # Rene'R Studio
 
 [![Android quality checks](https://github.com/tatselkrik/rene-r-studio/actions/workflows/android-quality.yml/badge.svg?branch=main)](https://github.com/tatselkrik/rene-r-studio/actions/workflows/android-quality.yml)
-[![Latest release](https://img.shields.io/github/v/release/tatselkrik/rene-r-studio)](https://github.com/tatselkrik/rene-r-studio/releases/latest)
 
 An Android photo workspace for Rene'R's in-house printing service. Capture or open a photo, prepare an ID sheet or a full-page landscape image, adjust its appearance, and print directly to an Epson EcoTank L15150 over local Wi-Fi.
 
-**Current version:** 1.0.8 (build 12) · **Platform:** Android 6.0+ · **Distribution:** Signed APK
+**Current version:** 1.0.8 (build 12) · **Platform:** Android 6.0+ · **Distribution:** Signed APK prepared locally
 
-[Download APK](https://github.com/tatselkrik/rene-r-studio/releases/download/v1.0.8/ReneR-Studio-v1.0.8.apk) · [User guide](docs/user-guide-v1.0.8.md) · [Release notes](#release-notes) · [Application tour](#application-tour) · [Developer setup](#developer-setup)
+[User guide](docs/user-guide-v1.0.8.md) · [Release notes](#release-notes) · [Application tour](#application-tour) · [Developer setup](#developer-setup)
 
 ## What's new in 1.0.8
 
@@ -42,13 +41,15 @@ The eight ID layouts, camera framing, photo adjustments, paper choice and establ
 
 ## Installation and updates
 
-1. Download **[ReneR-Studio-v1.0.8.apk](https://github.com/tatselkrik/rene-r-studio/releases/download/v1.0.8/ReneR-Studio-v1.0.8.apk)** from the [v1.0.8 release](https://github.com/tatselkrik/rene-r-studio/releases/tag/v1.0.8).
+The signed APK and matching checksum for this build are kept locally; there is no public installer upload for v1.0.8.
+
+1. Obtain **ReneR-Studio-v1.0.8.apk** and its matching checksum from the maintainer.
 2. Open it on the phone, allow installation from that source if Android asks, and install the update.
 3. Connect the phone and L15150 to the same local network, normally the same Wi-Fi. Open the app and check for **Printer ready**.
 
 Install over the existing release to retain private settings. The application identifier and signing identity are unchanged. If Android reports a signature conflict, preserve needed photos and consult the [release guide](GIT_AND_RELEASE_GUIDE.md) before uninstalling.
 
-The app is distributed through GitHub Releases, not Google Play. Updates are installed manually. Each release includes an APK checksum. Android Studio is needed only for development.
+This build is distributed as a local signed APK, with manual installation and a matching checksum. Android Studio is needed only for development or building from source.
 
 ## From photo to print
 
@@ -85,9 +86,9 @@ Landscape requests fill scaling, landscape orientation and zero margins, using a
 
 | Version | Date | Summary |
 | --- | --- | --- |
-| [1.0.8](https://github.com/tatselkrik/rene-r-studio/releases/tag/v1.0.8) | 2026-10-19 | Safer shared files, capture recovery, printer timeout/IPv6 fixes, backup exclusions and protected release signing |
+| [1.0.8](CHANGELOG.md#108---2026-10-19) | 2026-10-19 | Safer shared files, capture recovery, printer timeout/IPv6 fixes, backup exclusions and protected release signing |
 
-See the [detailed notes](CHANGELOG.md#108---2026-10-19) and [GitHub release](https://github.com/tatselkrik/rene-r-studio/releases/tag/v1.0.8) for the installer, checksum and verification limits.
+See the [detailed notes](CHANGELOG.md#108---2026-10-19) and [code-review record](CODE_REVIEW_2026-10-19.md) for changes and verification limits. The signed installer and checksum remain local; Git contains the source and documentation update.
 
 ## Application tour
 
@@ -171,7 +172,7 @@ Face detection, segmentation, checks and adjustments run on the phone. The app h
 
 Printing uses encrypted IPPS with a saved printer-certificate pin. Initial pairing trusts the certificate presented on the local network; subsequent connections must match it. A changed certificate requires an explicit reconnect in Printer Setup. There is no silent unencrypted fallback.
 
-The public repository includes source, documentation and reviewed demonstration screenshots. Private signing keys, credentials, local device configuration, customer photos, build output and task-checkpoint files are excluded. Signed installers are distributed as release assets.
+The public repository includes source, documentation and reviewed demonstration screenshots. Private signing keys, credentials, local device configuration, customer photos, build output and task-checkpoint files are excluded. The signed installer and checksum are kept outside Git in the ignored local release directory.
 
 The project targets one established 5×7-inch L15150 workflow. Other paper sizes/printers, remote internet printing, automated photo retention and authority-specific passport certification are outside the current implementation. Automated ID checks assist the operator; they do not certify passport compliance or detect every hair boundary.
 
