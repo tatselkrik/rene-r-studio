@@ -4,6 +4,13 @@ Version milestones are listed below; intermediate development and validation bui
 
 Entries dated October 28 record source and documentation publication of local builds prepared on October 27. Signed APKs and checksums remain local. Physical-test limitations are retained below.
 
+## 1.0.11 - 2026-10-28
+
+- Remove ASA Separate's automatic transition from the first capture to camera two. Every captured/imported photo returns to the side-by-side editor; camera originals are still saved before editing.
+- Preserve the working direct-slot and camera-screen import paths for both photos, along with framing, positions, Single behavior and optional Landscape white background.
+- Build 15 was prepared locally on October 27 without overwriting earlier installers. Source and release-log publication was authorized on October 28; physical phone/printer acceptance remains unverified. The APK stays local.
+- Verification before handoff: 90 unit tests, debug/release assembly and release lint passed (zero errors/18 retained warnings). The signed v1.0.10-to-v1.0.11 upgrade retained camera permission. On API 36, photo 1 returned to the pair view with slot 2 empty; photo 2 and a photo-1 retake returned with both slots filled. The retake left photo 2 pixel-identical, all three originals were saved, all four direct/camera-screen import paths passed, and the final sheet preview opened without a crash. Only ASA navigation and version metadata changed in application source from the previous candidate.
+
 ## 1.0.10 - 2026-10-28
 
 - Correct ASA Separate file imports reopening the second camera. Separately now starts in the side-by-side editor with direct Open 1/Open 2 controls; only actual first camera captures continue automatically to camera two after album saving.

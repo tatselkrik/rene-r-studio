@@ -162,7 +162,7 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
         workingFiles.clear()
     }
 
-    fun openPhoto(uri: Uri, index: Int, continueCamera: Boolean = false) = work {
+    fun openPhoto(uri: Uri, index: Int) = work {
         val opened = PhotoImporter.open(context, uri)
         workingFiles += opened.file
         val source = AsaSource(opened, AsaCrop.fit(opened.size, aspect))
@@ -176,11 +176,8 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
         }
         photos = updated
         frame = null
+        cameraOpen = false
         stage = AsaStage.EDIT
-        if (continueCamera && mode == AsaMode.SEPARATE && updated.size == 1) {
-            captureIndex = 1
-            cameraOpen = true
-        }
     }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -193,7 +190,7 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
     pendingCapture?.let { capture ->
         SaveCaptureScreen(capture) { savedUri ->
             pendingCapture = null
-            openPhoto(savedUri, captureIndex, continueCamera = true)
+            openPhoto(savedUri, captureIndex)
             capture.file.delete()
         }
         return

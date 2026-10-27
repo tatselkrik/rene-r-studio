@@ -1,16 +1,16 @@
 # Rene'R Studio
 
-**Current version:** 1.0.10 (build 14) · Android 6.0+ · Local signed APK
+**Current version:** 1.0.11 (build 15) · Android 6.0+ · Local signed APK
 
-[User guide](docs/user-guide-v1.0.10.md) · [Release log](CHANGELOG.md)
+[User guide](docs/user-guide-v1.0.11.md) · [Release log](CHANGELOG.md)
 
-Direct ASA file imports, Single framing without person identification and optional Landscape white Background.
+Every ASA camera shot returns to the side-by-side editor after saving the original.
 
 Rene'R Studio prepares Single ID sheets, ASA two-person sheets and full-page landscape photos on Android, then shares the finished JPEG or prints to the established Epson L15150. All workflows use 5×7-inch paper.
 
 ## Install and connect
 
-Obtain the signed `ReneR-Studio-v1.0.10.apk` and its matching checksum from the maintainer. This build is kept locally rather than uploaded as a GitHub Release. Install it over the existing release to retain settings. The signing identity is unchanged; if Android reports a signature conflict, preserve needed photos and follow the [release guide](GIT_AND_RELEASE_GUIDE.md).
+Obtain the signed `ReneR-Studio-v1.0.11.apk` and its matching checksum from the maintainer. This build is kept locally rather than uploaded as a GitHub Release. Install it over the existing release to retain settings. The signing identity is unchanged; if Android reports a signature conflict, preserve needed photos and follow the [release guide](GIT_AND_RELEASE_GUIDE.md).
 
 Connect the phone and printer to the same local network, normally the same Wi-Fi. Internet is not required for local printing. Open the app and wait for **Printer ready**. If automatic discovery cannot pair, open **Printer Setup** and connect by address. Capture and editing remain available while the printer is offline.
 
@@ -33,7 +33,7 @@ Checks cover exactly one face, both eyes, obvious closed eyes, head angle, blur,
 
 1. Choose **ID Photo → ASA**. The only layout is four horizontal **3-inch-wide × 2-inch-high** photos on **5×7-inch** paper.
 2. Choose **Together** for one photo of both people sitting side by side. Stand farther back and frame just above the chest. The full camera frame is used; there is no person identifier or face-selection step.
-3. Alternatively choose **Separately** to open the two-slot view immediately. Choose **Open 1** and **Open 2** to import files directly, or **Take 1 / Take 2** for camera shots. Every import stays in the side-by-side view. A first camera capture may open camera two after its original is saved. Each source fills one half of the combined horizontal image.
+3. Alternatively choose **Separately** to open the two-slot view immediately. Choose **Open 1** and **Open 2** to import files directly, or **Take 1 / Take 2** for camera shots. Every imported or captured photo returns to the side-by-side view. Camera originals save first. After photo 1, choose Take 2 or Open 2 when ready; photo 2 is never opened automatically. Each source fills one half of the combined horizontal image.
 4. In Separate mode, choose **Left / Right** for either photo. The other photo moves to the opposite side. Retaking one source preserves the other.
 5. Automatic fitting is already applied. Optionally open **Adjust framing**: drag/pinch or use Zoom. For separate sources, select **First photo / Second photo** and adjust each independently. **Auto fit** resets only that source. Tap **Done**.
 6. Tap **Preview** for finishing. **Background** starts on and replaces the background with white while keeping both people. **Auto** and Brightness, Contrast, Vibrance, Saturation and Temperature work as in Single. Inspect hair, shoulders and both faces; turn Background off to retain the original scene.
@@ -55,7 +55,7 @@ The crop always fills the whole page, including at minimum zoom. It trims part o
 
 Landscape keeps the original scene by default and has an optional white Background toggle. It has no Single ID checks. White replacement and all adjustments carry through the preview, Share and Print; changing the crop resets Background off. Its output contains no ID cells, corner cutting guides or added white margins. The exported JPEG is 4200×3000 pixels with 600 dpi metadata. Direct printing additionally requests zero margins and landscape orientation.
 
-**Physical landscape edge coverage and paper compatibility are not yet verified for v1.0.10.** Use an L15150 sample print to check all four edges and orientation. The printer must support borderless printing for the requested paper and source; unsupported settings produce an error instead of silently printing a bordered page.
+**Physical landscape edge coverage and paper compatibility are not yet verified for v1.0.11.** Use an L15150 sample print to check all four edges and orientation. The printer must support borderless printing for the requested paper and source; unsupported settings produce an error instead of silently printing a bordered page.
 
 ## Adjust the photo
 
