@@ -2,11 +2,11 @@
 
 ## What Git Does
 
-Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current source/build is **Rene'R Studio v1.0.8 / versionCode 12**. Its signed APK and checksum are local; no v1.0.8 tag or GitHub Release was published. Historical tags and release assets remain preserved.
+Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current source version is **v1.0.9 / versionCode 13**. The v1.0.9–v1.0.12 source states and release logs are published separately in version order. Signed APKs and checksums remain local; historical tags and release assets are preserved.
 
-Kirk requested a new version and Git updates on October 19, 2026, then explicitly chose to keep the APK local. This authorizes the source/documentation update, not a new version tag or public APK release. Version 1.0.8 contains the seven completed code-review fixes and uses the existing automatic signing identity. Its local and emulator checks do not establish successful physical landscape printing; keep that limitation in the release notes.
+On October 28, 2026, Kirk explicitly authorized source/release-log pushes for v1.0.9 through v1.0.12, one version at a time, and requested a current README without code-review material. This supersedes the earlier Git publication hold. APKs and checksums remain local; no new tag or GitHub Release is included. Local checks and emulator output do not establish successful physical ASA or landscape printing.
 
-Version 1.0.8 improves sharing privacy, printer recovery, IPv6 handling, capture recovery, backup exclusions and installer safety. The established ID/landscape workflows and calibration remain preserved. See [CHANGELOG.md](CHANGELOG.md) and the [v1.0.8 user guide](docs/user-guide-v1.0.8.md).
+Version 1.0.9: ASA Together / Separately, independent framing and four horizontal 3×2 photos on 5×7 paper. See the [user guide](docs/user-guide-v1.0.9.md).
 
 Useful commands in Android Studio's Terminal:
 
@@ -37,7 +37,11 @@ git switch main
 git merge codex/short-feature-name
 ```
 
-For the next release, choose a new `versionName`, increase `versionCode` above `12`, build the installer with the same signing key, and publish a matching tag only after the required checks and Kirk's publication authorization.
+For the next release, choose a new `versionName`, increase `versionCode` above `13`, build the installer with the same signing key, and publish a matching tag only after the required checks and Kirk's publication authorization.
+
+## Source publication authorization
+
+The October 28 authorization covers four sequential source/documentation commits and pushes to main. Match each application source state to its saved build fingerprint and verify the exact pushed commit in CI before proceeding to the next. Preserve every existing APK, checksum, key, tag and release. Installer publication or new tags require separate authorization; do not rebuild unchanged tested source.
 
 ## Local Git Versus Backup
 

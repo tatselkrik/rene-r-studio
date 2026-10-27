@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
 private enum class WorkflowScreen {
     HOME,
     LANDSCAPE,
+    ASA,
     CAPTURE,
     SAVE_CAPTURE,
     IMPORT,
@@ -270,10 +271,11 @@ private fun IdPhotoWorkflow() {
         screen = if (importedPhoto != null) WorkflowScreen.IMPORT else WorkflowScreen.CAPTURE
     }
 
-    BackHandler(enabled = screen != WorkflowScreen.HOME && screen != WorkflowScreen.LANDSCAPE) {
+    BackHandler(enabled = screen != WorkflowScreen.HOME && screen != WorkflowScreen.LANDSCAPE && screen != WorkflowScreen.ASA) {
         when (screen) {
             WorkflowScreen.HOME -> Unit
             WorkflowScreen.LANDSCAPE -> Unit
+            WorkflowScreen.ASA -> Unit
             WorkflowScreen.CAPTURE -> screen = WorkflowScreen.HOME
             WorkflowScreen.SAVE_CAPTURE -> Unit
             WorkflowScreen.IMPORT -> {
@@ -301,6 +303,7 @@ private fun IdPhotoWorkflow() {
             onPrinterSetup = { printerReturn = WorkflowScreen.HOME; screen = WorkflowScreen.PRINTER_SETUP },
         )
         WorkflowScreen.LANDSCAPE -> com.idphoto.printing.ui.LandscapePhotoScreen(printerConnection) { screen = WorkflowScreen.HOME }
+        WorkflowScreen.ASA -> com.idphoto.printing.ui.AsaPhotoScreen(printerConnection) { screen = WorkflowScreen.CAPTURE }
         WorkflowScreen.CAPTURE -> CaptureScreen(
             printerState = printerState,
             onCaptured = { capture ->
@@ -312,18 +315,14 @@ private fun IdPhotoWorkflow() {
                 screen = WorkflowScreen.PRINTER_SETUP
             },
             onChoosePhoto = { picker.launch(arrayOf("image/*")) },
+            onAsa = { screen = WorkflowScreen.ASA },
         )
         WorkflowScreen.SAVE_CAPTURE -> {
             val capture = requireNotNull(pendingCapture)
-            SaveCaptureScreen(capture) { savedUri ->
+            SaveCaptureScreen(capture) {
                 pendingCapture = null
-                if (capture.isGroup) {
-                    openImportedPhoto(savedUri)
-                    capture.file.delete()
-                } else {
-                    capturedPhoto = capture
-                    screen = WorkflowScreen.REVIEW
-                }
+                capturedPhoto = capture
+                screen = WorkflowScreen.REVIEW
             }
         }
         WorkflowScreen.IMPORT -> ImportCropScreen(

@@ -98,7 +98,7 @@ internal object SheetCanvasRenderer {
         return Rect(leftPx, topPx, rightPx, bottomPx)
     }
 
-    private fun drawCornerCutGuides(
+    fun drawCornerCutGuides(
         canvas: Canvas,
         bounds: RectF,
         length: Float,

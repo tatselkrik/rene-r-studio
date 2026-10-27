@@ -72,7 +72,6 @@ import java.util.UUID
 data class CapturedPhoto(
     val file: File,
     val cameraSquare: FloatRect?,
-    val isGroup: Boolean = false,
     val framingError: String? = null,
     val allowLowResolution: Boolean = false,
 )
@@ -85,6 +84,9 @@ fun CaptureScreen(
     onPrinterSetup: () -> Unit,
     onChoosePhoto: () -> Unit,
     landscape: Boolean = false,
+    asa: Boolean = false,
+    asaPerson: Int? = null,
+    onAsa: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -95,7 +97,7 @@ fun CaptureScreen(
         )
     }
     var isCapturing by remember { mutableStateOf(false) }
-    var groupMode by remember { mutableStateOf(landscape) }
+    val fullFrame = landscape || asa
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -130,8 +132,8 @@ fun CaptureScreen(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
-                    .aspectRatio(if (landscape) 7f / 5f else 3f / 4f)
-                    .then(if (landscape) Modifier.clipToBounds() else Modifier),
+                    .aspectRatio(if (landscape) 7f / 5f else if (asa && asaPerson == null) 3f / 2f else 3f / 4f)
+                    .then(if (fullFrame) Modifier.clipToBounds() else Modifier),
             ) {
                 androidx.compose.ui.viewinterop.AndroidView(
                     factory = { viewContext ->
@@ -144,7 +146,7 @@ fun CaptureScreen(
                     },
                     modifier = Modifier.fillMaxSize(),
                 )
-                if (!groupMode) FaceGuide(modifier = Modifier.fillMaxSize())
+                if (!fullFrame) FaceGuide(modifier = Modifier.fillMaxSize())
             }
         } else {
             PermissionPrompt(onChoosePhoto = onChoosePhoto, onRequest = {
@@ -167,17 +169,23 @@ fun CaptureScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (landscape) Text("Landscape Photo", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                else if (asa) {
+                    Text(if (asaPerson == null) "ASA · Together" else "ASA · Photo $asaPerson",
+                        color = Color.White, style = MaterialTheme.typography.titleLarge)
+                    Text(if (asaPerson == null) "Frame both people just above the chest." else "Frame one person just above the chest.",
+                        color = Color.White, style = MaterialTheme.typography.bodyMedium)
+                }
                 else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf(false to "Single", true to "Group").forEach { (group, label) ->
+                    listOf("Single", "ASA").forEach { label ->
                         OutlinedButton(
-                            onClick = { groupMode = group },
+                            onClick = { if (label == "ASA") onAsa?.invoke() },
                             enabled = !isCapturing,
                             modifier = Modifier.weight(1f).height(56.dp),
                             shape = RoundedCornerShape(18.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color.White),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = if (groupMode == group) Color.White else Color.Transparent,
-                                contentColor = if (groupMode == group) PineDark else Color.White,
+                                containerColor = if (label == "Single") Color.White else Color.Transparent,
+                                contentColor = if (label == "Single") PineDark else Color.White,
                             ),
                         ) { Text(label) }
                     }
@@ -230,7 +238,6 @@ fun CaptureScreen(
                             return@Button
                         }
                         isCapturing = true
-                        val shotIsGroup = groupMode
                         val previewSize = ImageSize(activePreview.width, activePreview.height)
                         val guide = squareGuideRect(
                             width = activePreview.width.toFloat(),
@@ -239,7 +246,7 @@ fun CaptureScreen(
                         val captureDir = File(context.cacheDir, "captures").apply { mkdirs() }
                         val photoFile = File(
                             captureDir,
-                            "${if (landscape) "landscape-photo" else "id-photo"}-${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(8)}.jpg",
+                            "${if (landscape) "landscape-photo" else if (asa) "asa-photo" else "id-photo"}-${System.currentTimeMillis()}-${UUID.randomUUID().toString().take(8)}.jpg",
                         )
                         val metadata = ImageCapture.Metadata().apply {
                             setReversedHorizontal(false)
@@ -257,7 +264,7 @@ fun CaptureScreen(
                                             // LifecycleCameraController binds both use cases to PreviewView's
                                             // viewport. Saved JPEGs are cropped to it by CameraX; normalize
                                             // in upright coordinates rather than mixing raw buffer rotations.
-                                            val mapping = if (shotIsGroup) null else runCatching {
+                                            val mapping = if (fullFrame) null else runCatching {
                                                 CaptureGuideMapper.map(previewSize, BitmapLoader.uprightSize(photoFile), guide)
                                             }
                                             isCapturing = false
@@ -265,7 +272,6 @@ fun CaptureScreen(
                                                 CapturedPhoto(
                                                     file = photoFile,
                                                     cameraSquare = mapping?.getOrNull(),
-                                                    isGroup = shotIsGroup,
                                                     framingError = mapping?.exceptionOrNull()?.message,
                                                 ),
                                             )
@@ -335,7 +341,7 @@ fun CaptureScreen(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.78f)),
                 ) {
-                    Text(if (landscape) "Back" else "Printer Setup", fontWeight = FontWeight.SemiBold)
+                    Text(if (fullFrame) "Back" else "Printer Setup", fontWeight = FontWeight.SemiBold)
                 }
             }
         }

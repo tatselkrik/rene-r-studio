@@ -2,6 +2,18 @@
 
 Version milestones are listed below; intermediate development and validation builds are consolidated under their version. Dates use Philippine local time. Versions 1.0.0–1.0.2 are historical Git tags; GitHub APK releases begin at 1.0.3. Earlier notes describe the behavior at the time, including the Rene'R ID Print name and the former Save action.
 
+Entries dated October 28 record source and documentation publication of local builds prepared on October 27. Signed APKs and checksums remain local. Physical-test limitations are retained below.
+
+## 1.0.9 - 2026-10-28
+
+- Replace Group capture with ASA. Together uses a full-frame upper-chest photo of two people; Separately captures two originals and lets either source be placed left or right.
+- Automatically fit a horizontal 3×2-inch photo. Optional framing adjusts the shared image or each separate source independently, without a person identifier or single-face ID checks.
+- Use one fixed layout: four horizontal photos on 5×7 paper. Rotate the photos on the existing portrait print path and show an upright landscape-oriented preview. Retain the L15150 size/color correction, corner cutting guides and remembered paper choice.
+- Include Single-style white Background, Auto and the five adjustment sliders. Preview, Share and Print use the same finished photo; shared exports remain unique and neutral.
+- Preserve Single's eight layouts, Single Open Photo person selection, Landscape, album-original saving, application identifier, dependency baseline and permanent signing identity. Build 13 was prepared locally on October 27; source and release-log publication was authorized on October 28.
+- Local checks passed: 90 unit tests, release assembly and lint with zero errors/18 retained advisory warnings. API 36 emulator checks covered both captures, independent framing, position swaps, white/original backgrounds, Auto reset, compact layouts and two immutable four-copy exports at 3000×4200/600 dpi. The signed APK upgraded from build 12 without uninstalling or losing camera permission, then passed an ASA Separate/white-background/preview smoke check.
+- Physical phone/printer acceptance remains pending. No print job or share recipient was selected during local checks. The signed APK and checksum remain local. The authorized source update does not create a GitHub Release, version tag or installer upload.
+
 ## 1.0.8 - 2026-10-19
 
 ### Privacy and reliability

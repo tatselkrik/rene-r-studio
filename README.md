@@ -1,224 +1,106 @@
 # Rene'R Studio
 
-[![Android quality checks](https://github.com/tatselkrik/rene-r-studio/actions/workflows/android-quality.yml/badge.svg?branch=main)](https://github.com/tatselkrik/rene-r-studio/actions/workflows/android-quality.yml)
+**Current version:** 1.0.9 (build 13) · Android 6.0+ · Local signed APK
 
-An Android photo workspace for Rene'R's in-house printing service. Capture or open a photo, prepare an ID sheet or a full-page landscape image, adjust its appearance, and print directly to an Epson EcoTank L15150 over local Wi-Fi.
+[User guide](docs/user-guide-v1.0.9.md) · [Release log](CHANGELOG.md)
 
-**Current version:** 1.0.8 (build 12) · **Platform:** Android 6.0+ · **Distribution:** Signed APK prepared locally
+ASA Together / Separately, independent framing and four horizontal 3×2 photos on 5×7 paper.
 
-[User guide](docs/user-guide-v1.0.8.md) · [Release notes](#release-notes) · [Application tour](#application-tour) · [Developer setup](#developer-setup)
+Rene'R Studio prepares Single ID sheets, ASA two-person sheets and full-page landscape photos on Android, then shares the finished JPEG or prints to the established Epson L15150. All workflows use 5×7-inch paper.
 
-## What's new in 1.0.8
+## Install and connect
 
-- **Safer sharing:** every ID sheet and landscape export receives its own file. Preparing another image leaves previously shared images unchanged.
-- **More reliable capture:** Back is blocked while Single, Group or Landscape capture is in progress; camera submission failures show an error and allow retrying.
-- **Clearer printer recovery:** a discovery deadline reports a timeout while actual cancellation remains respected. IPv6 addresses and resource paths are handled correctly.
-- **Explicit backup exclusions:** private app data is excluded from Android cloud backup and device transfer. Camera originals in the phone album follow the phone's gallery settings.
-- **Protected installers:** release signing preserves existing versioned APKs, validates the exact version name and build code, and verifies a staged candidate before making it the final installer.
+Obtain the signed `ReneR-Studio-v1.0.9.apk` and its matching checksum from the maintainer. This build is kept locally rather than uploaded as a GitHub Release. Install it over the existing release to retain settings. The signing identity is unchanged; if Android reports a signature conflict, preserve needed photos and follow the [release guide](GIT_AND_RELEASE_GUIDE.md).
 
-The eight ID layouts, camera framing, photo adjustments, paper choice and established L15150 size/color corrections remain unchanged. See the [release notes](CHANGELOG.md#108---2026-10-19).
+Connect the phone and printer to the same local network, normally the same Wi-Fi. Internet is not required for local printing. Open the app and wait for **Printer ready**. If automatic discovery cannot pair, open **Printer Setup** and connect by address. Capture and editing remain available while the printer is offline.
 
-## Two photo workflows
+## Print IDs
 
-| | ID Photo | Landscape Photo |
-| --- | --- | --- |
-| Input | Single/Group camera capture or Open Photo | Camera capture or Open Photo |
-| Crop | Adjustable person selection for groups/imports; square and narrower passport previews | Movable 7:5 crop with drag, pinch and zoom |
-| Finishing | Optional white background, Auto and five sliders | Original background, Auto and five sliders |
-| Checks | Face, eyes, framing, head angle, sharpness and resolution | Advisory resolution warning; no ID face checks |
-| Output | Portrait 5×7 sheet with ID photos and corner cutting guides | Landscape 7×5 image filling the page, with no added margins or cutting guides |
-| Paper | Remembered Matte / Glossy | Same remembered Matte / Glossy choice |
+1. Choose **ID Photo** on the opening screen.
+2. Keep **Single** for the guided square camera. **Open Photo** also accepts existing single-person or group images. Use the separate **ASA** entry for the two-person workflow below.
+3. For Single capture, leave space above the hair inside the square. Camera originals save automatically before editing. Imported photos open **Choose person**; ASA does not use this selector.
+4. Tap a detected face or a numbered **Person** button, then drag and resize the square. The person-button row scrolls sideways. Face suggestions are optional; manual positioning works without them.
+5. Inspect the square and passport previews. Inner lines show where the narrower passport crop trims the sides; it retains the square crop's height. Tap **Use crop**.
+6. On **Automatic Check**, inspect both previews. Set **Background**, **Auto** and the sliders as needed.
+7. Tap **Layout**, choose one of eight combinations, then **Preview**.
+8. Select **Matte** or **Glossy** immediately above Print. Tap **Print** or **Share**. **Back** returns to layouts.
 
-## Core capabilities
+**Reframe** returns to the same group/imported source so you can choose another person. Each new crop starts with neutral adjustments. **Choose another photo** replaces the source. Retake and reframing do not delete the saved camera original.
 
-- **Capture or import:** use the camera or Android's photo/file picker, including single-person and group images.
-- **Choose a person:** face suggestions provide starting points; manual crop positioning preserves headroom and allows another person to be selected from the same source.
-- **Keep the original:** new camera photos automatically save to the phone album before editing. Imported originals stay unchanged.
-- **Adjust consistently:** non-destructive edits appear in crop previews, the finished JPEG and printing.
-- **Use eight ID layouts:** combine 2×2-inch, 35×45 mm passport-size and 1×1-inch photos on one sheet.
-- **Reconnect automatically:** the app checks its saved printer on opening, returning to the foreground and Wi-Fi changes.
-- **Share or print:** Android sharing exports the finished JPEG; encrypted IPPS sends it directly to the local printer.
+Checks cover exactly one face, both eyes, obvious closed eyes, head angle, blur, resolution and framing. Face/eye containment must pass for the crops used by the selected layout. Multiple faces within the final crop still fail the one-person check. Selected source crops below 600 pixels per side show an advisory warning; their pixels are not enlarged to bypass quality checks. These checks do not certify a passport authority's requirements or detect every hair boundary: inspect the previews yourself.
 
-## Installation and updates
+## Print ASA photos
 
-The signed APK and matching checksum for this build are kept locally; there is no public installer upload for v1.0.8.
+1. Choose **ID Photo → ASA**. The only layout is four horizontal **3-inch-wide × 2-inch-high** photos on **5×7-inch** paper.
+2. Choose **Together** for one photo of both people sitting side by side. Stand farther back and frame just above the chest. The full camera frame is used; there is no person identifier or face-selection step.
+3. Alternatively choose **Separately**. Take the first photo, then the second; the second camera opens automatically after the first original is saved. **Open Photo** can supply either source instead. Each photo fills half of the combined horizontal image.
+4. In Separate mode, choose **Left / Right** for either photo. The other photo moves to the opposite side. Retaking one source preserves the other.
+5. Automatic fitting is already applied. Optionally open **Adjust framing**: drag/pinch or use Zoom. For separate sources, select **First photo / Second photo** and adjust each independently. **Auto fit** resets only that source. Tap **Done**.
+6. Tap **Preview** for finishing. **Background** starts on and replaces the background with white while keeping both people. **Auto** and Brightness, Contrast, Vibrance, Saturation and Temperature work as in Single. Inspect hair, shoulders and both faces; turn Background off to retain the original scene.
+7. Tap **Preview** again. Choose **Matte / Glossy**, then **Share** or **Print**. There is no layout selector in ASA. Back returns to finishing, then to framing/placement.
 
-1. Obtain **ReneR-Studio-v1.0.8.apk** and its matching checksum from the maintainer.
-2. Open it on the phone, allow installation from that source if Android asks, and install the update.
-3. Connect the phone and L15150 to the same local network, normally the same Wi-Fi. Open the app and check for **Printer ready**.
+ASA does not enforce Single's one-face/ID checks. Low source resolution is advisory. The neutral shared sheet is 3000×4200 pixels with 600-dpi metadata. Each horizontal photo is rotated on the portrait print sheet, so four fit while keeping the established printer orientation, calibration and cutting guides. The on-screen paper is rotated back so all four photos appear upright.
 
-Install over the existing release to retain private settings. The application identifier and signing identity are unchanged. If Android reports a signature conflict, preserve needed photos and consult the [release guide](GIT_AND_RELEASE_GUIDE.md) before uninstalling.
+The signed APK remains local. Source and release-log publication was authorized on October 28, 2026; this does not establish a successful physical phone/printer test. Check both people, background edges, left/right placement and the physical 3×2-inch cut size on the L15150. No public installer upload is included.
 
-This build is distributed as a local signed APK, with manual installation and a matching checksum. Android Studio is needed only for development or building from source.
+## Print a landscape photo
 
-## From photo to print
+1. Choose **Landscape Photo**.
+2. Tap **Take Photo** or **Open Photo**. A camera shot saves its untouched original automatically, then opens the crop.
+3. Drag the image, pinch or use the zoom slider to fill the **7:5** area. Tap **Preview** to open adjustments.
+4. Set **Auto** or use the sliders, then tap **Preview** again for the finished **7×5 Print Preview**. **Reframe** returns to the crop.
+5. Choose **Matte** or **Glossy**, then **Print** or **Share**. **Back** returns to adjustments.
 
-**ID:** choose ID Photo → Single or Group / Open Photo → frame or select a person → Automatic Check and adjustments → Layout → Preview → choose paper → Print or Share.
+The crop always fills the whole page, including at minimum zoom. It trims part of the source when its shape differs from 7:5. White edges already inside a supplied image remain part of that image until you zoom and reposition to crop them away. Zoom cannot recover detail from a small file; the low-resolution warning remains advisory.
 
-**Landscape:** choose Landscape Photo → Take Photo or Open Photo → drag and zoom the crop → Preview → adjustments → Preview → choose paper → Print or Share.
+Landscape keeps the original scene and has no Background toggle or ID face checks. Its output contains no ID cells, corner cutting guides or added white margins. The exported JPEG is 4200×3000 pixels with 600 dpi metadata. Direct printing additionally requests zero margins and landscape orientation.
 
-Camera originals save under **Pictures / ReneR ID Print**. The existing album name is retained across the app rename. There is no final Save button: **Share** exports the finished image, while automatic saving preserves the untouched camera original.
+**Physical landscape edge coverage and paper compatibility are not yet verified for v1.0.9.** Use an L15150 sample print to check all four edges and orientation. The printer must support borderless printing for the requested paper and source; unsupported settings produce an error instead of silently printing a bordered page.
 
-The phone and printer need local network access to each other; internet is not required. If automatic discovery needs help, open **Printer Setup** and connect by address. See the [user guide](docs/user-guide-v1.0.8.md) for framing, paper selection and troubleshooting.
+## Adjust the photo
 
-## Output and printer behavior
-
-The default ID layout contains **4 × 2×2, 2 × passport and 4 × 1×1** photos. All eight presets use fixed millimetre coordinates:
-
-| 2×2-inch | Passport 35×45 mm | 1×1-inch |
-| ---: | ---: | ---: |
-| 6 | 0 | 0 |
-| 4 | 2 | 4 |
-| 4 | 0 | 8 |
-| 2 | 6 | 0 |
-| 2 | 4 | 6 |
-| 2 | 2 | 8 |
-| 0 | 8 | 4 |
-| 0 | 6 | 8 |
-
-ID JPEGs are **3000×4200** pixels; landscape JPEGs are **4200×3000** pixels. Both carry **600 dpi** metadata for 5×7-inch paper. A large exported pixel count does not recover detail missing from a low-resolution source.
-
-Direct printing targets the established L15150/Cassette 1 workflow at high quality. ID printing retains the measured RC Woven matte size correction (about 106.0% horizontal and 105.9% vertical). The established warmer direct-print color treatment remains in both modes; shared JPEGs do not receive printer calibration.
-
-Landscape requests fill scaling, landscape orientation and zero margins, using a borderless 5×7 media keyword when advertised. Unsupported requested settings produce an error rather than a silent bordered fallback. **Actual edge coverage, orientation and Matte/Glossy paper compatibility still require a physical L15150 test for the new landscape workflow.** Glossy-specific color recalibration was intentionally deferred.
-
-## Release notes
-
-| Version | Date | Summary |
-| --- | --- | --- |
-| [1.0.8](CHANGELOG.md#108---2026-10-19) | 2026-10-19 | Safer shared files, capture recovery, printer timeout/IPv6 fixes, backup exclusions and protected release signing |
-
-See the [detailed notes](CHANGELOG.md#108---2026-10-19) and [code-review record](CODE_REVIEW_2026-10-19.md) for changes and verification limits. The signed installer and checksum remain local; Git contains the source and documentation update.
-
-## Application tour
-
-The gallery shows the current interface using reviewed demonstration images. The interface is unchanged by this maintenance release. Expand a screen to view it. Printer-ready labels illustrate the interface and do not establish a physical print result. [Screenshot sources and scope](docs/screenshots/current/README.md).
-
-<details>
-<summary><strong>1. Home — ID or Landscape</strong></summary>
-
-<img src="docs/screenshots/current/home.png" alt="Rene'R Studio home with ID Photo, Landscape Photo and Printer Setup" width="400">
-
-</details>
-
-<details>
-<summary><strong>2. ID camera — Single, Group or Open Photo</strong></summary>
-
-<img src="docs/screenshots/current/id-camera.png" alt="ID camera with square framing guide and Single/Group controls" width="400">
-
-</details>
-
-<details>
-<summary><strong>3. Group photo — choose and frame a person</strong></summary>
-
-Tap a face or a Person button, then position and resize the square. The numbered person row scrolls horizontally.
-
-<img src="docs/screenshots/current/id-person-selection.png" alt="Group photo with face suggestions, movable square and crop controls" width="400">
-
-</details>
-
-<details>
-<summary><strong>4. ID review — Background, Auto and adjustments</strong></summary>
-
-<img src="docs/screenshots/current/id-adjustments.png" alt="ID square and passport previews with Background, Auto and photo sliders" width="400">
-
-</details>
-
-<details>
-<summary><strong>5. Layout — eight ID combinations</strong></summary>
-
-<img src="docs/screenshots/current/id-layout.png" alt="Eight ID sheet combinations with 2 by 2, passport and 1 by 1 counts" width="400">
-
-</details>
-
-<details>
-<summary><strong>6. ID preview — paper choice before Print</strong></summary>
-
-<img src="docs/screenshots/current/id-preview.png" alt="Portrait ID sheet with cutting guides, Share, Matte/Glossy, Back and Print" width="400">
-
-</details>
-
-<details>
-<summary><strong>7. Landscape camera — capture a wide image</strong></summary>
-
-<img src="docs/screenshots/current/landscape-camera.png" alt="Landscape camera viewport with Take Photo and Open Photo" width="400">
-
-</details>
-
-<details>
-<summary><strong>8. Landscape crop — drag and zoom to fill</strong></summary>
-
-<img src="docs/screenshots/current/landscape-crop.png" alt="Landscape crop with zoom slider and advisory low-resolution warning" width="400">
-
-</details>
-
-<details>
-<summary><strong>9. Landscape adjustments — preserve the original scene</strong></summary>
-
-<img src="docs/screenshots/current/landscape-adjustments.png" alt="Landscape image with Auto and five sliders and no Background toggle" width="400">
-
-</details>
-
-<details>
-<summary><strong>10. Landscape preview — full-page image and Glossy selection</strong></summary>
-
-<img src="docs/screenshots/current/landscape-preview.png" alt="Landscape 7 by 5 preview with Glossy selected immediately before Print" width="400">
-
-</details>
-
-## Privacy and scope
-
-Face detection, segmentation, checks and adjustments run on the phone. The app has no photo-cloud upload workflow. Camera originals stay in the phone album until the operator deletes them; imported originals stay unchanged. Working images and temporary sheets use private app cache. Share sends the finished image through the Android app the operator selects; Print sends it to the local printer.
-
-Printing uses encrypted IPPS with a saved printer-certificate pin. Initial pairing trusts the certificate presented on the local network; subsequent connections must match it. A changed certificate requires an explicit reconnect in Printer Setup. There is no silent unencrypted fallback.
-
-The public repository includes source, documentation and reviewed demonstration screenshots. Private signing keys, credentials, local device configuration, customer photos, build output and task-checkpoint files are excluded. The signed installer and checksum are kept outside Git in the ignored local release directory.
-
-The project targets one established 5×7-inch L15150 workflow. Other paper sizes/printers, remote internet printing, automated photo retention and authority-specific passport certification are outside the current implementation. Automated ID checks assist the operator; they do not certify passport compliance or detect every hair boundary.
-
-## Documentation
-
-| Document | Purpose |
+| Control | Effect |
 | --- | --- |
-| [User guide — v1.0.8](docs/user-guide-v1.0.8.md) | Installation, ID and landscape workflows, adjustments, paper and troubleshooting |
-| [Release history](CHANGELOG.md) | Version milestones, retained behavior and verification limits |
-| [Screenshot notes](docs/screenshots/current/README.md) | Current gallery inventory, demo sources and privacy boundary |
-| [Git and Release Guide](GIT_AND_RELEASE_GUIDE.md) | Branches, automatic signing and verified publication |
+| Background — Single and ASA | Replaces the detected background with white and gently lifts subject shadows. Turn it off to retain the original background. |
+| Auto | Applies conservative brightness/contrast correction; manual sliders are disabled while on. |
+| Brightness | Lightens or darkens the image. |
+| Contrast | Changes separation between light and dark tones. |
+| Vibrance | Adjusts muted colors more gently, with reduced effect on skin-like warm hues. |
+| Saturation | Changes overall color intensity. |
+| Temperature | Cooler to the left, warmer to the right. |
 
-## Developer setup
+Brightness and Contrast come first. Scroll for the remaining controls on smaller screens or larger text settings. There is no Exposure slider or Reset button. **Change Auto to clear manual edits; turn it off for neutral sliders.** New captures/crops start neutral with Auto off.
 
-| Component | Project baseline |
+Edits are calculated from the working image rather than accumulated over previous edits. Previews, sharing and printing use the same adjusted photo. Wait for adjustment processing to finish before continuing. Direct printing then adds the established printer-specific color correction; shared JPEGs remain free of that correction. Replacement backgrounds remain white.
+
+## Select paper
+
+Choose **Matte / Glossy** immediately before Print in any final preview, or under **Printer Setup → Paper type**. The choice saves immediately, applies across all workflows and survives reopening and reconnection. Matte is the initial choice. Select the type matching the paper actually loaded; the app does not detect the stock.
+
+Glossy uses the printer's advertised glossy media type. If the saved profile lacks it, reconnect in Printer Setup to refresh capabilities. If the printer still does not report support, the app reports the unsupported choice rather than silently using matte. The paper choice changes the media request; it does not introduce a new glossy color calibration. Current color correction is retained.
+
+## Originals and finished images
+
+- Camera originals save under **Pictures / ReneR ID Print**. The album name remains unchanged after the app rename.
+- A failed album save keeps the captured working file and offers **Retry saving**. Android 9 and earlier require storage permission for the album.
+- Importing does not duplicate or modify the selected original. Open Photo uses Android's picker without broad storage permission; files above 100 MB are rejected. JPEG and PNG are recommended if another format cannot be decoded.
+- Temporary working images and sheets use private app cache. Replacing an imported source or returning to Camera removes the current source working copy.
+- Each Share creates a separate finished-image file, leaving earlier shared images unchanged.
+- There is no final Save button. **Share** sends the finished sheet/image through Android's sharing panel; automatic camera saving preserves the untouched original, not the edited output.
+- Saved originals remain until you delete them. The app has no cloud-photo upload workflow or automatic retention policy.
+
+## Troubleshooting
+
+| Situation | What to do |
 | --- | --- |
-| Language / UI | Kotlin / Jetpack Compose, BOM 2026.06.00 |
-| Build | Gradle 9.1.0 / Android Gradle Plugin 9.0.1 |
-| Android | Compile SDK 36.1, target 36, minimum 23 |
-| Java | JDK 17 or a compatible Android Studio embedded JDK |
-| Camera | CameraX 1.6.1 |
-| On-device vision | ML Kit face detection 16.1.7 / selfie segmentation 16.0.0-beta6 (retained baseline) |
-| Printer protocol | JIPP 0.7.18 over encrypted IPPS |
-| Application ID | `com.idphoto.printing` (preserved for upgrades) |
+| Printer unavailable | Check power, same local network and network isolation. Reopen/retry; use Printer Setup if discovery needs help. |
+| Certificate changed | Explicitly reconnect in Printer Setup after checking the printer address. Automatic connections do not replace the saved certificate. |
+| Glossy unavailable | Reconnect to refresh reported capabilities; confirm that the printer supports the requested media. |
+| Landscape print rejected | Check support for 5×7 borderless, paper type and Cassette 1. Unsupported requests are not silently converted to bordered printing. |
+| Printer reports substituted settings | Inspect the physical page and edges; do not assume the requested output was honored. |
+| Hair/face clipped in an ID | Reframe or retake, preserving headroom and checking both square and passport previews. |
+| Low resolution | Prefer a larger original or a wider crop. A warning does not block a manually selected crop or landscape image solely for pixel count. |
+| Imported format cannot open | Try JPEG or PNG; phone decoders determine other supported formats. |
+| Controls below the screen | Scroll the content, especially with larger system text. Final action rows respect the screen insets. |
 
-Open this root project in Android Studio, install SDK Platform 36.1, compatible Build-Tools and Platform-Tools, and allow the first sync to download dependencies. Run the `app` configuration on a phone or emulator. Development builds use a different signing identity from the release installer.
-
-```text
-app/src/main/java/com/idphoto/printing/
-├── analysis/   Face and sharpness checks
-├── core/       Crop geometry, physical units and ID layouts
-├── image/      Loading, original saving and adjustments
-├── print/      JPEG rendering, paper profiles and IPPS
-└── ui/         Capture, crop, review, preview and setup screens
-app/src/test/   Unit tests
-docs/           User guides and screenshot galleries
-tools/          Signed-installer helper and safety regression checks
-```
-
-Verification on Windows, with the JDK configured:
-
-```powershell
-.\gradlew.bat testDebugUnitTest lintRelease assembleRelease
-powershell -ExecutionPolicy Bypass -File .\tools\test-installer-safety.ps1
-```
-
-GitHub's Android quality workflow runs unit tests, debug lint and a debug build. Release verification includes 83 unit tests, release lint/assembly, installer signature and package/version checks, and emulator capture/import/preview/sharing checks. Installer-safety regression checks also run in CI. Physical phone and printer validation remains separate; landscape edge coverage, orientation and paper compatibility still need an L15150 sample print.
-
-The configured signing helper uses the permanent automatic key and a Windows-protected local credential without prompting for a password. Missing signing state fails rather than replacing the key. Private signing material must never enter Git or release assets. See the [release guide](GIT_AND_RELEASE_GUIDE.md) before preparing an installer.
+The ID scale correction was physically established for the existing L15150/RC Woven matte workflow. Other paper sizes, printer models and authority-specific ID rules require separate verification.
