@@ -4,6 +4,13 @@ Version milestones are listed below; intermediate development and validation bui
 
 Entries dated October 28 record source and documentation publication of local builds prepared on October 27. Signed APKs and checksums remain local. Physical-test limitations are retained below.
 
+## 1.0.12 - 2026-10-28
+
+- Add a remembered Borderless / Bordered choice on Landscape's final print preview. Borderless remains the default and keeps its zero-margin fill request. Bordered keeps landscape orientation, requests regular 5×7 paper and 3 mm margins, and fits the full crop inside the printable area. Both retain Matte / Glossy selection.
+- Preview the bordered paper with white margins. Share continues exporting the adjusted full-crop JPEG without printer margins, avoiding double margins when printed elsewhere.
+- Preserve the ASA return-to-pair fix, all import routes, Single behavior, optional Landscape white Background, original-photo saving, identifiers, signing identity, dependencies and printer calibration. Build 16 was prepared locally on October 27; source and documentation publication was authorized on October 28. The signed APK and checksum remain local.
+- Verification passed: 95 unit tests, debug/release assembly and release lint (zero errors/18 retained warnings). The exact signed v1.0.11-to-v1.0.12 upgrade retained camera permission and paper selection. Both border modes, Matte/Glossy independence, border persistence after process restart and the sharing panel passed on API 36. Normal and 360-dp/1.2-text previews had visible controls and no crash. Source comparison confirms ASA, Single and JPEG renderers are unchanged from the previous candidate. No print job or share recipient was selected. Physical border widths and paper compatibility require an L15150 sample print.
+
 ## 1.0.11 - 2026-10-28
 
 - Remove ASA Separate's automatic transition from the first capture to camera two. Every captured/imported photo returns to the side-by-side editor; camera originals are still saved before editing.

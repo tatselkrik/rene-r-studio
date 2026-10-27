@@ -25,6 +25,7 @@ data class PrinterConnectionState(
     val checking: Boolean = false,
     val message: String = "Checking printer…",
     val paperType: PaperType = PaperType.MATTE,
+    val landscapeBorderless: Boolean = true,
 )
 
 /** Shared by capture, setup and preview so they never hold separate saved profiles. */
@@ -34,14 +35,17 @@ class PrinterConnection(
     private val discover: suspend () -> String,
     private val loadPaper: () -> PaperType = { PaperType.MATTE },
     private val savePaper: (PaperType) -> Unit = {},
+    private val loadLandscapeBorderless: () -> Boolean = { true },
+    private val saveLandscapeBorderless: (Boolean) -> Unit = {},
     private val probe: suspend (String, String?) -> DirectPrinterProfile,
 ) {
     private val mutex = Mutex()
-    private val mutableState = MutableStateFlow(PrinterConnectionState(paperType = loadPaper()))
+    private val mutableState = MutableStateFlow(PrinterConnectionState(
+        paperType = loadPaper(), landscapeBorderless = loadLandscapeBorderless()))
     val state = mutableState.asStateFlow()
 
     suspend fun refresh() = mutex.withLock {
-        mutableState.value = PrinterConnectionState(checking = true, paperType = mutableState.value.paperType)
+        mutableState.value = mutableState.value.copy(profile = null, checking = true, message = "Checking printer…")
         try {
             val saved = load()
             // A legacy plain-IPP profile must be explicitly paired securely once.
@@ -65,28 +69,26 @@ class PrinterConnection(
             }
             accept(connected)
         } catch (cancelled: CancellationException) {
-            mutableState.value = PrinterConnectionState(message = "Printer check paused", paperType = mutableState.value.paperType)
+            mutableState.value = mutableState.value.copy(profile = null, checking = false, message = "Printer check paused")
             throw cancelled
         } catch (error: Exception) {
-            mutableState.value = PrinterConnectionState(
+            mutableState.value = mutableState.value.copy(profile = null, checking = false,
                 message = error.message ?: "Printer unavailable. Check Wi-Fi and power.",
-                paperType = mutableState.value.paperType,
             )
         }
     }
 
     /** Explicit setup may establish a new trust-on-first-use certificate. */
     suspend fun connect(address: String): DirectPrinterProfile = mutex.withLock {
-        mutableState.value = PrinterConnectionState(checking = true, paperType = mutableState.value.paperType)
+        mutableState.value = mutableState.value.copy(profile = null, checking = true, message = "Checking printer…")
         try {
             probe(address, null).also(::accept)
         } catch (cancelled: CancellationException) {
-            mutableState.value = PrinterConnectionState(message = "Printer check paused", paperType = mutableState.value.paperType)
+            mutableState.value = mutableState.value.copy(profile = null, checking = false, message = "Printer check paused")
             throw cancelled
         } catch (error: Exception) {
-            mutableState.value = PrinterConnectionState(
+            mutableState.value = mutableState.value.copy(profile = null, checking = false,
                 message = error.message ?: "Could not connect securely.",
-                paperType = mutableState.value.paperType,
             )
             throw error
         }
@@ -97,12 +99,17 @@ class PrinterConnection(
         mutableState.value = mutableState.value.copy(paperType = paper)
     }
 
+    suspend fun selectLandscapeBorderless(borderless: Boolean) = mutex.withLock {
+        saveLandscapeBorderless(borderless)
+        mutableState.value = mutableState.value.copy(landscapeBorderless = borderless)
+    }
+
     private fun accept(profile: DirectPrinterProfile) {
         if (!profile.readyForDirectPrint) {
             throw IOException("The printer must support encrypted JPEG printing on 5 × 7 paper.")
         }
         save(profile)
-        mutableState.value = PrinterConnectionState(profile = profile, message = "Printer ready", paperType = mutableState.value.paperType)
+        mutableState.value = mutableState.value.copy(profile = profile, checking = false, message = "Printer ready")
     }
 
     companion object {
@@ -114,6 +121,8 @@ class PrinterConnection(
                 discover = { EpsonPrinterDiscovery.find(app).probeAddress },
                 loadPaper = { DirectPrinterSettings.loadPaper(app) },
                 savePaper = { DirectPrinterSettings.savePaper(app, it) },
+                loadLandscapeBorderless = { DirectPrinterSettings.loadLandscapeBorderless(app) },
+                saveLandscapeBorderless = { DirectPrinterSettings.saveLandscapeBorderless(app, it) },
                 probe = { address, certificate ->
                     withContext(Dispatchers.IO) {
                         DirectIppPrinter.probe(address, certificate, tryStandardPaths = false)

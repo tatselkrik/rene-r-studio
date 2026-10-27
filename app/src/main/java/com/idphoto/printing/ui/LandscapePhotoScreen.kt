@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -16,6 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -157,7 +161,8 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().background(CanvasCream).safeDrawingPadding().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally) {
         Text(if (preview == null) "Landscape Photo" else if (finalPreview) "7 × 5 Print Preview" else "Adjust Photo", style = MaterialTheme.typography.titleLarge)
-        Text("Borderless • ${state.paperType.label}", style = MaterialTheme.typography.bodyMedium, color = Muted)
+        Text("${if (state.landscapeBorderless) "Borderless" else "Bordered"} • ${state.paperType.label}",
+            style = MaterialTheme.typography.bodyMedium, color = Muted)
         val source = photo
         val selection = crop
         Box((if (preview != null && !finalPreview) Modifier.fillMaxWidth().height(200.dp) else Modifier.weight(1f).fillMaxWidth()), contentAlignment = Alignment.Center) {
@@ -165,7 +170,14 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
             val imageModifier = Modifier.width(minOf(maxWidth, maxHeight * LandscapeCrop.ASPECT)).aspectRatio(LandscapeCrop.ASPECT)
             val ready = activeBitmap
             if (ready != null) {
-                PhotoCrop(ready, LandscapeCrop.fit(ImageSize(ready.width, ready.height)),
+                if (finalPreview && !state.landscapeBorderless) {
+                    BoxWithConstraints(imageModifier.background(Color.White), contentAlignment = Alignment.Center) {
+                        Image(ready.asImageBitmap(), contentDescription = "Bordered landscape photo preview",
+                            contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(
+                                horizontal = maxWidth * (LANDSCAPE_BORDER_MM / 177.8f),
+                                vertical = maxHeight * (LANDSCAPE_BORDER_MM / 127f)))
+                    }
+                } else PhotoCrop(ready, LandscapeCrop.fit(ImageSize(ready.width, ready.height)),
                     ImageSize(ready.width, ready.height), imageModifier)
             } else if (source != null && selection != null) {
                 var size by remember { mutableStateOf(IntSize.Zero) }
@@ -259,6 +271,17 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
                 SheetJpegActions.share(context, jpeg, "Share landscape photo")
             } }, Modifier.fillMaxWidth().height(48.dp), enabled = !busy && adjustmentsReady) { Text("Share") }
             Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Print", Modifier.weight(1f))
+                listOf(true to "Borderless", false to "Bordered").forEach { (borderless, label) ->
+                    FilterChip(selected = state.landscapeBorderless == borderless,
+                        onClick = { scope.launch { connection.selectLandscapeBorderless(borderless); error = null; message = null } },
+                        label = { Text(label) }, enabled = !busy && !state.checking,
+                        modifier = Modifier.semantics { contentDescription = "Landscape $label" })
+                }
+            }
+            if (!state.landscapeBorderless) Text("White margins surround the print. Share exports only the photo.",
+                style = MaterialTheme.typography.bodySmall, color = Muted)
             PaperTypeChoice(state.paperType, !busy && !state.checking) { paper ->
                 scope.launch { connection.selectPaper(paper) }
             }
@@ -268,10 +291,12 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
                     if (connection.state.value.profile == null) connection.refresh()
                     val printer = connection.state.value.profile ?: error(connection.state.value.message)
                     val paper = connection.state.value.paperType
+                    val mode = if (connection.state.value.landscapeBorderless) DirectPrintMode.LANDSCAPE_BORDERLESS
+                        else DirectPrintMode.LANDSCAPE_BORDERED
                     message = withContext(Dispatchers.IO) {
                         val jpeg = LandscapeJpegGenerator.generate(File(context.cacheDir, "print/landscape-direct.jpg"),
                             requireNotNull(activeBitmap), PhotoColorTone.DIRECT_PRINT_WARM)
-                        DirectIppPrinter.printJpeg(printer, jpeg, "Landscape photo 7x5", paper, borderlessLandscape = true).message
+                        DirectIppPrinter.printJpeg(printer, jpeg, "Landscape photo 7x5", paper, mode).message
                     }
                 } }, Modifier.weight(1f).height(48.dp), enabled = !busy && !state.checking && adjustmentsReady) {
                     Text(if (busy) "Printing…" else "Print")

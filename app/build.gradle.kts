@@ -16,8 +16,8 @@ android {
         applicationId = "com.idphoto.printing"
         minSdk = 23
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.0.11"
+        versionCode = 16
+        versionName = "1.0.12"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

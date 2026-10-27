@@ -2,11 +2,11 @@
 
 ## What Git Does
 
-Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current source version is **v1.0.11 / versionCode 15**. The v1.0.9–v1.0.12 source states and release logs are published separately in version order. Signed APKs and checksums remain local; historical tags and release assets are preserved.
+Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current source version is **v1.0.12 / versionCode 16**. The v1.0.9–v1.0.12 source states and release logs are published separately in version order. Signed APKs and checksums remain local; historical tags and release assets are preserved.
 
 On October 28, 2026, Kirk explicitly authorized source/release-log pushes for v1.0.9 through v1.0.12, one version at a time, and requested a current README without code-review material. This supersedes the earlier Git publication hold. APKs and checksums remain local; no new tag or GitHub Release is included. Local checks and emulator output do not establish successful physical ASA or landscape printing.
 
-Version 1.0.11: Every ASA camera shot returns to the side-by-side editor after saving the original. See the [user guide](docs/user-guide-v1.0.11.md).
+Version 1.0.12 adds a remembered Borderless/Bordered choice for Landscape. Bordered fits the crop inside normal printer margins; Share exports the photo without those margins. Every ASA capture still returns to the pair view after saving. It retains the corrected import paths, Single framing without person selection and optional Landscape white background. ASA retains its four-copy 3×2 layout, independent framing and left/right placement. The established Single/Landscape workflows and calibration remain preserved. See [CHANGELOG.md](CHANGELOG.md) and the [v1.0.12 user guide](docs/user-guide-v1.0.12.md).
 
 Useful commands in Android Studio's Terminal:
 
@@ -37,7 +37,7 @@ git switch main
 git merge codex/short-feature-name
 ```
 
-For the next release, choose a new `versionName`, increase `versionCode` above `15`, build the installer with the same signing key, and publish a matching tag only after the required checks and Kirk's publication authorization.
+For the next release, choose a new `versionName`, increase `versionCode` above `16`, build the installer with the same signing key, and publish a matching tag only after the required checks and Kirk's publication authorization.
 
 ## Source publication authorization
 

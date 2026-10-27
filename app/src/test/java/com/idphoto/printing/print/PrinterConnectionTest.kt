@@ -9,6 +9,48 @@ import org.junit.Test
 class PrinterConnectionTest {
     private val original = DirectPrinterProfile(host = "printer.test", certificateSha256 = "original-pin")
 
+    @Test fun `landscape border choice persists independently of paper and connection state`() = runBlocking {
+        var borderless = true
+        var paper = PaperType.MATTE
+        var online = true
+        fun connection() = PrinterConnection(load = { original }, save = {}, discover = { original.probeAddress() },
+            loadPaper = { paper }, savePaper = { paper = it },
+            loadLandscapeBorderless = { borderless }, saveLandscapeBorderless = { borderless = it },
+            probe = { _, _ -> if (!online) throw IOException("Offline") else original })
+        val first = connection()
+        assertTrue(first.state.value.landscapeBorderless)
+        first.selectLandscapeBorderless(false)
+        first.selectPaper(PaperType.GLOSSY)
+        first.refresh()
+        assertFalse(first.state.value.landscapeBorderless)
+        online = false
+        first.refresh()
+        assertNull(first.state.value.profile)
+        assertFalse(first.state.value.landscapeBorderless)
+        online = true
+        first.connect(original.probeAddress())
+        assertFalse(first.state.value.landscapeBorderless)
+        val reopened = connection()
+        assertFalse(reopened.state.value.landscapeBorderless)
+        assertEquals(PaperType.GLOSSY, reopened.state.value.paperType)
+        reopened.refresh()
+        reopened.selectLandscapeBorderless(true)
+        assertTrue(borderless)
+        assertEquals(PaperType.GLOSSY, reopened.state.value.paperType)
+    }
+
+    @Test fun `cancelled refresh preserves selected landscape border`() = runBlocking {
+        val connection = PrinterConnection({ original }, {}, { error("Unexpected discovery") },
+            loadLandscapeBorderless = { false }) { _, _ -> throw CancellationException("Stopped") }
+        try {
+            connection.refresh()
+            fail("Cancellation must propagate")
+        } catch (_: CancellationException) {
+            assertFalse(connection.state.value.checking)
+            assertFalse(connection.state.value.landscapeBorderless)
+        }
+    }
+
     @Test fun `saved paper choice survives reconnect and offline recovery`() = runBlocking {
         var paper = PaperType.GLOSSY
         var online = true

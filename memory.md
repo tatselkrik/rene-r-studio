@@ -60,3 +60,18 @@
 - Kirk requested a new version and Git updates after the review. Keep the README current-only: remove superseded version numbers, old download/guide links and its historical release table. This supersedes the October 13 README history-table preference; preserve history in CHANGELOG.md, versioned guides, tags and release assets.
 - The canonical public repository is tatselkrik/rene-r-studio. GitHub redirects the former rene-r-id-print address to the same repository; use the canonical name in current links and the Git remote.
 - For v1.0.8, Kirk explicitly chose to keep the APK local and said the Git update was enough. Keep the signed APK/checksum local, publish source/docs only, and omit unpublished tag/download links or a latest-release badge from the current README. Git updates alone do not authorize tagging or APK publication.
+
+## 2026-10-27
+
+- Kirk replaced Group capture with ASA for two people. Together uses one upper-chest photo; Separately takes two photos and lets the operator assign left/right. ASA has no person identification/selection or single-person ID checks. Single's imported-person selection and eight layouts remain unchanged.
+- ASA uses horizontal photos, 3 inches wide by 2 high, with only four copies on 5x7 paper. Automatic fitting is the default; optional Adjust framing moves/zooms the whole Together photo or each Separate photo independently. Retain Single-style white Background, Auto, Brightness, Contrast, Vibrance, Saturation and Temperature controls.
+- Prepare the ASA update and signed APK locally for Kirk's phone test. No Git commit or GitHub update is authorized until he reports back and approves it; preserve the signing identity and prior installers.
+- Later phone-test corrections supersede the earlier Single import person-selection decision: Single must have no person identifier or numbered person picker for either camera or imported photos. Retain framing and normal Single photo-quality checks.
+- ASA Separately must present the side-by-side slots and direct Open 1/Open 2 controls. File imports stay in that panel; only a first camera capture may advance automatically to the second camera after its original is saved.
+- Kirk now requests optional white Background for Landscape as well, superseding the earlier original-scene-only restriction. Default it off; preserve its scene unless selected, while applying the chosen source consistently to adjustments, preview, Share and Print. Test all three corrections before the next phone APK handoff.
+- Final ASA capture correction supersedes the earlier camera-sequencing exception: every successful camera shot, including photo 1, must return to the side-by-side editor after its original is saved. Never automatically open camera two. Kirk confirmed both direct-slot imports and imports from either camera screen work; preserve all four import paths.
+- Kirk added a remembered Borderless / Bordered option for Landscape. Keep Borderless as the initial choice. Bordered uses normal 3 mm margins and fits the full landscape crop inside them; Share remains the adjusted photo without printer margins. This supersedes the earlier borderless-only Landscape restriction. Preserve ASA capture/import return-to-pair behavior and the local phone-test-before-Git boundary.
+
+## 2026-10-28
+
+- Kirk explicitly authorized source and release-log updates for v1.0.9 through v1.0.12, pushed one version at a time. This supersedes the October 27 Git hold; it does not establish physical-test success or authorize APK uploads, GitHub Releases or tags. Keep the README focused on the current version and remove code-review material from it; retain historical changes in the release log and versioned guides.

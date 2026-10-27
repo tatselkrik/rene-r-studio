@@ -2,6 +2,7 @@ package com.idphoto.printing.print
 
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.core.content.edit
 import com.hp.jipp.encoding.Attribute
 import com.hp.jipp.encoding.IppInputStream
 import com.hp.jipp.encoding.IppOutputStream
@@ -83,6 +84,15 @@ object DirectPrinterSettings {
     fun savePaper(context: Context, paper: PaperType) {
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit()
             .putString("paper_choice", paper.name).apply()
+    }
+
+    fun loadLandscapeBorderless(context: Context): Boolean =
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).getBoolean("landscape_borderless", true)
+
+    fun saveLandscapeBorderless(context: Context, borderless: Boolean) {
+        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit {
+            putBoolean("landscape_borderless", borderless)
+        }
     }
 
     fun load(context: Context): DirectPrinterProfile? {
@@ -237,7 +247,7 @@ object DirectIppPrinter {
         jpeg: File,
         jobName: String,
         paperType: PaperType = PaperType.MATTE,
-        borderlessLandscape: Boolean = false,
+        mode: DirectPrintMode = DirectPrintMode.SHEET,
     ): DirectPrintResult {
         require(jpeg.isFile && jpeg.length() > 0L) { "The print JPEG is missing or empty." }
         if (!profile.supportsJpeg) {
@@ -261,12 +271,12 @@ object DirectIppPrinter {
             useTls = profile.useTls,
             certificateSha256 = profile.certificateSha256,
         )
-        val request = buildDirectPrintRequest(profile, jobName, paperType, borderlessLandscape)
+        val request = buildDirectPrintRequest(profile, jobName, paperType, mode)
         val response = post(endpoint, request, jpeg, 120_000)
         ensureSuccessful(response)
         val jobId = response.getValue(Tag.jobAttributes, Types.jobId)
-        if (borderlessLandscape && response.status.code != 0) {
-            return DirectPrintResult("The job was accepted, but the printer could not confirm every borderless setting. Check the printed edges before printing another copy.", jobId)
+        if (mode.landscape && response.status.code != 0) {
+            return DirectPrintResult("The job was accepted, but the printer could not confirm every landscape setting. Check the printed edges and margins before printing another copy.", jobId)
         }
         return DirectPrintResult(
             message = if (jobId == null) {
