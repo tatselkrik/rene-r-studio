@@ -114,10 +114,8 @@ private fun IdPhotoWorkflow() {
     var importJob by remember { mutableStateOf<Job?>(null) }
     var importGeneration by remember { mutableIntStateOf(0) }
     var importedPhoto by remember { mutableStateOf<ImportedPhoto?>(null) }
-    var importedFaces by remember { mutableStateOf<List<FloatRect>>(emptyList()) }
     var importCrop by remember { mutableStateOf<FloatRect?>(null) }
     var importBusy by remember { mutableStateOf(false) }
-    var detectingFaces by remember { mutableStateOf(false) }
     var importError by remember { mutableStateOf<String?>(null) }
     fun openImportedPhoto(uri: Uri) {
             val generation = ++importGeneration
@@ -126,31 +124,20 @@ private fun IdPhotoWorkflow() {
             importBusy = true
             importError = null
             importJob = importScope.launch {
-                var opened = false
                 try {
                     val photo = PhotoImporter.open(context, uri)
                     importedPhoto?.file?.delete()
                     importedPhoto = photo
-                    opened = true
-                    importedFaces = emptyList()
                     importCrop = ImportCrop.square(photo.size, photo.size.width / 2f, photo.size.height / 2f,
                         minOf(photo.size.width, photo.size.height).toFloat())
                     importBusy = false
-                    detectingFaces = true
-                    // Suggestions use the small overview. The chosen crop is decoded from the original file.
-                    val found = analyzer.findFaces(photo.preview)
-                    val sx = photo.size.width.toFloat() / photo.preview.width
-                    val sy = photo.size.height.toFloat() / photo.preview.height
-                    importedFaces = found.map { FloatRect(it.left * sx, it.top * sy, it.right * sx, it.bottom * sy) }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
-                    importError = if (opened) "Face suggestions unavailable. You can position the square manually."
-                        else error.message ?: "This photo could not be opened. Choose another file."
+                    importError = error.message ?: "This photo could not be opened. Choose another file."
                 } finally {
                     if (generation == importGeneration) {
                         importBusy = false
-                        detectingFaces = false
                     }
                 }
             }
@@ -282,10 +269,8 @@ private fun IdPhotoWorkflow() {
                 ++importGeneration
                 importJob?.cancel()
                 importBusy = false
-                detectingFaces = false
                 importedPhoto?.file?.delete()
                 importedPhoto = null
-                importedFaces = emptyList()
                 importCrop = null
                 screen = WorkflowScreen.CAPTURE
             }
@@ -326,18 +311,16 @@ private fun IdPhotoWorkflow() {
             }
         }
         WorkflowScreen.IMPORT -> ImportCropScreen(
-            photo = importedPhoto, faces = importedFaces, crop = importCrop,
-            detecting = detectingFaces, busy = importBusy, error = importError,
+            photo = importedPhoto, crop = importCrop,
+            busy = importBusy, error = importError,
             onCropChange = { importCrop = it; importError = null },
             onChooseFile = { picker.launch(arrayOf("image/*")) },
             onBack = {
                 ++importGeneration
                 importJob?.cancel()
                 importBusy = false
-                detectingFaces = false
                 importedPhoto?.file?.delete()
                 importedPhoto = null
-                importedFaces = emptyList()
                 importCrop = null
                 screen = WorkflowScreen.CAPTURE
             },
@@ -347,7 +330,6 @@ private fun IdPhotoWorkflow() {
                 if (photo != null && square != null) {
                     val generation = ++importGeneration
                     importJob?.cancel()
-                    detectingFaces = false
                     importBusy = true
                     importError = null
                     importJob = importScope.launch {

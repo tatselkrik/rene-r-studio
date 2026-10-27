@@ -162,7 +162,7 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
         workingFiles.clear()
     }
 
-    fun openPhoto(uri: Uri, index: Int) = work {
+    fun openPhoto(uri: Uri, index: Int, continueCamera: Boolean = false) = work {
         val opened = PhotoImporter.open(context, uri)
         workingFiles += opened.file
         val source = AsaSource(opened, AsaCrop.fit(opened.size, aspect))
@@ -177,7 +177,7 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
         photos = updated
         frame = null
         stage = AsaStage.EDIT
-        if (mode == AsaMode.SEPARATE && updated.size == 1) {
+        if (continueCamera && mode == AsaMode.SEPARATE && updated.size == 1) {
             captureIndex = 1
             cameraOpen = true
         }
@@ -193,7 +193,7 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
     pendingCapture?.let { capture ->
         SaveCaptureScreen(capture) { savedUri ->
             pendingCapture = null
-            openPhoto(savedUri, captureIndex)
+            openPhoto(savedUri, captureIndex, continueCamera = true)
             capture.file.delete()
         }
         return
@@ -266,9 +266,9 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
                         Modifier.fillMaxWidth().height(60.dp)) { Text("Together") }
                     Text("Take one photo of both people.", Modifier.padding(8.dp), color = Muted)
                     Spacer(Modifier.height(16.dp))
-                    Button({ reset(); mode = AsaMode.SEPARATE; captureIndex = 0; stage = AsaStage.EDIT; cameraOpen = true },
+                    Button({ reset(); mode = AsaMode.SEPARATE; captureIndex = 0; stage = AsaStage.EDIT },
                         Modifier.fillMaxWidth().height(60.dp)) { Text("Separately") }
-                    Text("Take two photos, then choose left and right.", Modifier.padding(8.dp), color = Muted)
+                    Text("Take or open two photos, then choose left and right.", Modifier.padding(8.dp), color = Muted)
                 }
             }
             AsaStage.EDIT, AsaStage.FRAMING -> {
@@ -293,7 +293,7 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
                         OutlinedButton({ updateCrop(framingIndex, AsaCrop.fit(selected.photo.size, aspect)) },
                             Modifier.fillMaxWidth(), enabled = !busy) { Text("Auto fit") }
                     } else {
-                        if (mode == AsaMode.SEPARATE && complete) AsaPositionControls(firstSide, !busy) { firstSide = it }
+                        if (mode == AsaMode.SEPARATE) AsaPositionControls(firstSide, !busy) { firstSide = it }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             repeat(mode.photoCount) { index ->
                                 OutlinedButton({ captureIndex = index; cameraOpen = true }, Modifier.weight(1f),
@@ -301,6 +301,12 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
                                     Text(if (mode == AsaMode.TOGETHER) if (complete) "Retake" else "Take Photo"
                                         else "${if (index < photos.size) "Retake" else "Take"} ${index + 1}")
                                 }
+                            }
+                        }
+                        if (mode == AsaMode.SEPARATE) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            repeat(mode.photoCount) { index ->
+                                OutlinedButton({ captureIndex = index; picker.launch(arrayOf("image/*")) }, Modifier.weight(1f),
+                                    enabled = !busy && index <= photos.size) { Text("Open ${index + 1}") }
                             }
                         }
                         OutlinedButton({ framingIndex = 0; stage = AsaStage.FRAMING }, Modifier.fillMaxWidth(),

@@ -4,6 +4,14 @@ Version milestones are listed below; intermediate development and validation bui
 
 Entries dated October 28 record source and documentation publication of local builds prepared on October 27. Signed APKs and checksums remain local. Physical-test limitations are retained below.
 
+## 1.0.10 - 2026-10-28
+
+- Correct ASA Separate file imports reopening the second camera. Separately now starts in the side-by-side editor with direct Open 1/Open 2 controls; only actual first camera captures continue automatically to camera two after album saving.
+- Remove the person picker, numbered Person buttons, face suggestion boxes and imported-person detection from Single. Retain manual framing, passport guides, normal Single photo-quality checks and background/adjustment settings.
+- Add optional white Background to Landscape, off by default. Use the selected background consistently for Auto/manual adjustments, preview, Share and Print.
+- Build 14 was prepared locally on October 27 for phone testing. Preserve the earlier test APK, identifiers, signing identity, dependency baseline, eight Single layouts and printer calibration. Source and release-log publication was authorized on October 28; the signed APK and checksum stay local.
+- Verification passed before handoff: 90 unit tests, debug/release assembly, release lint (zero errors/18 retained warnings), and normal/360-dp larger-text UI checks. Emulator checks covered first/second ASA file imports, cancellation, mixed inputs, camera-only sequencing, Single framing through its print preview, and Landscape original/white preview and 4200×3000/600-dpi exports. Background off restored the original pixels and prior shared output remained unchanged. The signed build upgraded from v1.0.9 with camera permission retained and passed all three revised flows; the crash buffer was empty. Physical phone/printer acceptance remains pending.
+
 ## 1.0.9 - 2026-10-28
 
 - Replace Group capture with ASA. Together uses a full-frame upper-chest photo of two people; Separately captures two originals and lets either source be placed left or right.

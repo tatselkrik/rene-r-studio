@@ -5,8 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,9 +31,7 @@ import kotlin.math.roundToInt
 @Composable
 fun ImportCropScreen(
     photo: ImportedPhoto?,
-    faces: List<FloatRect>,
     crop: FloatRect?,
-    detecting: Boolean,
     busy: Boolean,
     error: String?,
     onCropChange: (FloatRect) -> Unit,
@@ -45,8 +41,8 @@ fun ImportCropScreen(
 ) {
     Column(Modifier.fillMaxSize().background(CanvasCream).safeDrawingPadding().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Choose person", style = MaterialTheme.typography.titleLarge)
-        Text("Tap a face or drag the square. Leave space above the hair.",
+        Text("Adjust framing", style = MaterialTheme.typography.titleLarge)
+        Text("Drag the square or tap to center it. Leave space above the hair.",
             style = MaterialTheme.typography.bodySmall)
         Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 12.dp),
             contentAlignment = Alignment.Center) {
@@ -60,14 +56,12 @@ fun ImportCropScreen(
                 val image = remember(photo) { photo.preview.asImageBitmap() }
                 Canvas(Modifier.fillMaxSize().onSizeChanged { canvasSize = it }
                     .semantics { contentDescription = "Photo with adjustable square and passport side guides" }
-                    .pointerInput(photo, faces, scale, origin, busy) {
+                    .pointerInput(photo, scale, origin, busy) {
                         detectTapGestures { point ->
                             if (busy || scale <= 0) return@detectTapGestures
                             val x = (point.x - origin.x) / scale
                             val y = (point.y - origin.y) / scale
-                            val face = faces.firstOrNull { x in it.left..it.right && y in it.top..it.bottom }
-                            onCropChange(if (face != null) ImportCrop.aroundFace(photo.size, face)
-                                else ImportCrop.square(photo.size, x, y, currentCrop.width))
+                            onCropChange(ImportCrop.square(photo.size, x, y, currentCrop.width))
                         }
                     }.pointerInput(photo, scale, origin, busy) {
                         detectDragGestures { change, amount ->
@@ -93,10 +87,6 @@ fun ImportCropScreen(
                     drawRect(shade, Offset(origin.x, top), Size((left - origin.x).coerceAtLeast(0f), side))
                     drawRect(shade, Offset(left + side, top), Size(
                         (origin.x + display.width - left - side).coerceAtLeast(0f), side))
-                    faces.forEach { face ->
-                        drawRect(Color(0xFFFFD54F), Offset(origin.x + face.left * scale, origin.y + face.top * scale),
-                            Size(face.width * scale, face.height * scale), style = Stroke(1.dp.toPx()))
-                    }
                     drawRect(Color.White, Offset(left, top), Size(side, side), style = Stroke(3.dp.toPx()))
                     val inset = side * (1f - 35f / 45f) / 2
                     for (x in listOf(left + inset, left + side - inset)) {
@@ -111,16 +101,6 @@ fun ImportCropScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PhotoCrop(photo.preview, plan.square, photo.size, Modifier.size(88.dp))
                 PhotoCrop(photo.preview, plan.passport, photo.size, Modifier.height(88.dp).aspectRatio(35f / 45f))
-            }
-            if (detecting) Text("Finding faces…", style = MaterialTheme.typography.bodySmall)
-            else if (faces.isEmpty()) Text("No faces marked. Position the square manually.", style = MaterialTheme.typography.bodySmall)
-            if (faces.isNotEmpty()) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                faces.forEachIndexed { index, face ->
-                    OutlinedButton(onClick = { onCropChange(ImportCrop.aroundFace(photo.size, face)) }, enabled = !busy) {
-                        Text("Person ${index + 1}")
-                    }
-                }
             }
             Text("Crop size", style = MaterialTheme.typography.bodyMedium)
             val maxSide = min(photo.size.width, photo.size.height).toFloat()

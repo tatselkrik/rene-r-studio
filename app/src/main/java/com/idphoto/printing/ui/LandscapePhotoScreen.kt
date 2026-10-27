@@ -30,6 +30,7 @@ import com.idphoto.printing.image.PhotoAdjustmentProcessor
 import com.idphoto.printing.image.BitmapLoader
 import com.idphoto.printing.image.ImportedPhoto
 import com.idphoto.printing.image.PhotoImporter
+import com.idphoto.printing.image.BackgroundWhitener
 import com.idphoto.printing.print.*
 import java.io.File
 import kotlinx.coroutines.CancellationException
@@ -48,6 +49,13 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
     var photo by remember { mutableStateOf<ImportedPhoto?>(null) }
     var crop by remember { mutableStateOf<FloatRect?>(null) }
     var preview by remember { mutableStateOf<Bitmap?>(null) }
+    val backgroundWhitener = remember { BackgroundWhitener() }
+    var whiteBackgroundEnabled by remember { mutableStateOf(false) }
+    var whiteBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var whiteSource by remember { mutableStateOf<Bitmap?>(null) }
+    var backgroundBusy by remember { mutableStateOf(false) }
+    var backgroundError by remember { mutableStateOf<String?>(null) }
+    DisposableEffect(backgroundWhitener) { onDispose { backgroundWhitener.close() } }
     var finalPreview by remember { mutableStateOf(false) }
     var adjustments by remember { mutableStateOf(PhotoAdjustments.NEUTRAL) }
     var auto by remember { mutableStateOf(false) }
@@ -56,10 +64,24 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
     var appliedManual by remember { mutableStateOf<PhotoAdjustments?>(null) }
     var appliedAuto by remember { mutableStateOf(false) }
     var adjustmentError by remember { mutableStateOf<String?>(null) }
-    val adjustmentsReady = preview != null && appliedSource === preview && appliedManual == adjustments && appliedAuto == auto
-    val activeBitmap = if (appliedSource === preview) edited ?: preview else preview
-    LaunchedEffect(preview, adjustments, auto) {
-        val source = preview ?: return@LaunchedEffect
+    val sourceBitmap = if (whiteBackgroundEnabled && whiteSource === preview) whiteBitmap ?: preview else preview
+    val backgroundReady = !whiteBackgroundEnabled || (!backgroundBusy && whiteSource === preview && whiteBitmap != null)
+    val adjustmentsReady = sourceBitmap != null && backgroundReady && appliedSource === sourceBitmap && appliedManual == adjustments && appliedAuto == auto
+    val activeBitmap = if (appliedSource === sourceBitmap) edited ?: sourceBitmap else sourceBitmap
+    LaunchedEffect(preview, whiteBackgroundEnabled) {
+        val source = preview
+        if (source == null || !whiteBackgroundEnabled || (whiteSource === source && whiteBitmap != null)) return@LaunchedEffect
+        backgroundBusy = true
+        backgroundError = null
+        try {
+            whiteBitmap = backgroundWhitener.whiten(source)
+            whiteSource = source
+        } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { backgroundError = "White background could not be prepared. Turn Background off or reframe and retry." }
+        finally { backgroundBusy = false }
+    }
+    LaunchedEffect(sourceBitmap, adjustments, auto) {
+        val source = sourceBitmap ?: return@LaunchedEffect
         adjustmentError = null
         val manualSettings = adjustments
         val automatic = auto
@@ -179,11 +201,20 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
         }
         if (preview != null && !finalPreview) {
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Auto")
-                    Switch(auto, onCheckedChange = { adjustments = PhotoAdjustments.NEUTRAL; auto = it },
-                        enabled = !busy, modifier = Modifier.semantics { contentDescription = "Auto" })
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Background")
+                        Switch(whiteBackgroundEnabled, onCheckedChange = { whiteBackgroundEnabled = it },
+                            enabled = !busy, modifier = Modifier.semantics { contentDescription = "Background" })
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Auto")
+                        Switch(auto, onCheckedChange = { adjustments = PhotoAdjustments.NEUTRAL; auto = it },
+                            enabled = !busy, modifier = Modifier.semantics { contentDescription = "Auto" })
+                    }
                 }
+                if (backgroundBusy && whiteBackgroundEnabled) Text("Preparing white background…", style = MaterialTheme.typography.bodySmall)
+                if (whiteBackgroundEnabled) backgroundError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 PhotoAdjustmentControls(adjustments, auto || busy) { adjustments = it }
                 adjustmentError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
@@ -205,6 +236,10 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
                     val file = PhotoImporter.crop(context, requireNotNull(photo), requireNotNull(crop), squareOnly = false)
                     workingFiles += file
                     preview = withContext(Dispatchers.IO) { BitmapLoader.load(file) }
+                    whiteBackgroundEnabled = false
+                    whiteBitmap = null
+                    whiteSource = null
+                    backgroundError = null
                     adjustments = PhotoAdjustments.NEUTRAL
                     auto = false
                     finalPreview = false

@@ -2,11 +2,11 @@
 
 ## What Git Does
 
-Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current source version is **v1.0.9 / versionCode 13**. The v1.0.9–v1.0.12 source states and release logs are published separately in version order. Signed APKs and checksums remain local; historical tags and release assets are preserved.
+Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current source version is **v1.0.10 / versionCode 14**. The v1.0.9–v1.0.12 source states and release logs are published separately in version order. Signed APKs and checksums remain local; historical tags and release assets are preserved.
 
 On October 28, 2026, Kirk explicitly authorized source/release-log pushes for v1.0.9 through v1.0.12, one version at a time, and requested a current README without code-review material. This supersedes the earlier Git publication hold. APKs and checksums remain local; no new tag or GitHub Release is included. Local checks and emulator output do not establish successful physical ASA or landscape printing.
 
-Version 1.0.9: ASA Together / Separately, independent framing and four horizontal 3×2 photos on 5×7 paper. See the [user guide](docs/user-guide-v1.0.9.md).
+Version 1.0.10: Direct ASA file imports, Single framing without person identification and optional Landscape white Background. See the [user guide](docs/user-guide-v1.0.10.md).
 
 Useful commands in Android Studio's Terminal:
 
@@ -37,7 +37,7 @@ git switch main
 git merge codex/short-feature-name
 ```
 
-For the next release, choose a new `versionName`, increase `versionCode` above `13`, build the installer with the same signing key, and publish a matching tag only after the required checks and Kirk's publication authorization.
+For the next release, choose a new `versionName`, increase `versionCode` above `14`, build the installer with the same signing key, and publish a matching tag only after the required checks and Kirk's publication authorization.
 
 ## Source publication authorization
 
