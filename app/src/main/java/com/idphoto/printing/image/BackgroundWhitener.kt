@@ -14,6 +14,8 @@ import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
@@ -41,7 +43,7 @@ class BackgroundWhitener : Closeable {
         segmenter.close()
     }
 
-    private fun applyMask(source: Bitmap, mask: SegmentationMask): Bitmap {
+    private suspend fun applyMask(source: Bitmap, mask: SegmentationMask): Bitmap {
         require(mask.width > 0 && mask.height > 0) { "The background mask was empty." }
 
         val maskBuffer = mask.buffer
@@ -78,54 +80,61 @@ class BackgroundWhitener : Closeable {
             horizontalFraction[x] = maskX - left
         }
 
-        for (y in 0 until source.height) {
-            source.getPixels(row, 0, source.width, 0, y, source.width, 1)
-            val maskY = ((y + 0.5f) * mask.height / source.height - 0.5f)
-                .coerceIn(0f, (mask.height - 1).toFloat())
-            val top = floor(maskY).toInt()
-            val bottom = (top + 1).coerceAtMost(mask.height - 1)
-            val verticalFraction = maskY - top
-            val topOffset = top * mask.width
-            val bottomOffset = bottom * mask.width
+        val coroutine = currentCoroutineContext()
+        try {
+            for (y in 0 until source.height) {
+                coroutine.ensureActive()
+                source.getPixels(row, 0, source.width, 0, y, source.width, 1)
+                val maskY = ((y + 0.5f) * mask.height / source.height - 0.5f)
+                    .coerceIn(0f, (mask.height - 1).toFloat())
+                val top = floor(maskY).toInt()
+                val bottom = (top + 1).coerceAtMost(mask.height - 1)
+                val verticalFraction = maskY - top
+                val topOffset = top * mask.width
+                val bottomOffset = bottom * mask.width
 
-            for (x in row.indices) {
-                val fractionX = horizontalFraction[x]
-                val topConfidence = lerp(
-                    confidence[topOffset + maskLeft[x]],
-                    confidence[topOffset + maskRight[x]],
-                    fractionX,
-                )
-                val bottomConfidence = lerp(
-                    confidence[bottomOffset + maskLeft[x]],
-                    confidence[bottomOffset + maskRight[x]],
-                    fractionX,
-                )
-                val personConfidence = lerp(
-                    topConfidence,
-                    bottomConfidence,
-                    verticalFraction,
-                )
-                val retention = BackgroundWhiteningMath.foregroundRetention(personConfidence)
-                val pixel = row[x]
-                val red = Color.red(pixel)
-                val green = Color.green(pixel)
-                val blue = Color.blue(pixel)
-                val lighteningGain = BackgroundWhiteningMath.subjectLighteningGain(
-                    red = red,
-                    green = green,
-                    blue = blue,
-                    foregroundRetention = retention,
-                )
-                row[x] = Color.argb(
-                    BackgroundWhiteningMath.foregroundAlpha(retention),
-                    BackgroundWhiteningMath.applyGain(red, lighteningGain),
-                    BackgroundWhiteningMath.applyGain(green, lighteningGain),
-                    BackgroundWhiteningMath.applyGain(blue, lighteningGain),
-                )
+                for (x in row.indices) {
+                    val fractionX = horizontalFraction[x]
+                    val topConfidence = lerp(
+                        confidence[topOffset + maskLeft[x]],
+                        confidence[topOffset + maskRight[x]],
+                        fractionX,
+                    )
+                    val bottomConfidence = lerp(
+                        confidence[bottomOffset + maskLeft[x]],
+                        confidence[bottomOffset + maskRight[x]],
+                        fractionX,
+                    )
+                    val personConfidence = lerp(
+                        topConfidence,
+                        bottomConfidence,
+                        verticalFraction,
+                    )
+                    val retention = BackgroundWhiteningMath.foregroundRetention(personConfidence)
+                    val pixel = row[x]
+                    val red = Color.red(pixel)
+                    val green = Color.green(pixel)
+                    val blue = Color.blue(pixel)
+                    val lighteningGain = BackgroundWhiteningMath.subjectLighteningGain(
+                        red = red,
+                        green = green,
+                        blue = blue,
+                        foregroundRetention = retention,
+                    )
+                    row[x] = Color.argb(
+                        BackgroundWhiteningMath.foregroundAlpha(retention),
+                        BackgroundWhiteningMath.applyGain(red, lighteningGain),
+                        BackgroundWhiteningMath.applyGain(green, lighteningGain),
+                        BackgroundWhiteningMath.applyGain(blue, lighteningGain),
+                    )
+                }
+                output.setPixels(row, 0, source.width, 0, y, source.width, 1)
             }
-            output.setPixels(row, 0, source.width, 0, y, source.width, 1)
+            return output
+        } catch (error: Throwable) {
+            output.recycle()
+            throw error
         }
-        return output
     }
 
     private fun lerp(start: Float, end: Float, amount: Float): Float =

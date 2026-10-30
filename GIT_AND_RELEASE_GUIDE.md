@@ -2,11 +2,13 @@
 
 ## What Git Does
 
-Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The current source version is **v1.0.12 / versionCode 16**. The v1.0.9–v1.0.12 source states and release logs are published separately in version order. Signed APKs and checksums remain local; historical tags and release assets are preserved.
+The current source version is **v1.0.13 / versionCode 17**. Kirk authorized its source/documentation commit and push on October 30, 2026, excluding the security report. The signed APK and checksum remain local. Preserve all existing signed installers and the saved signing identity.
+
+Git preserves named snapshots of the source code. Local Git works without internet; publishing to GitHub requires an authenticated account. Source lives on `main` in [tatselkrik/rene-r-studio](https://github.com/tatselkrik/rene-r-studio). The v1.0.9–v1.0.12 source states and release logs were published separately in version order. Signed APKs and checksums remain local; historical tags and release assets are preserved.
 
 On October 28, 2026, Kirk explicitly authorized source/release-log pushes for v1.0.9 through v1.0.12, one version at a time, and requested a current README without code-review material. This supersedes the earlier Git publication hold. APKs and checksums remain local; no new tag or GitHub Release is included. Local checks and emulator output do not establish successful physical ASA or landscape printing.
 
-Version 1.0.12 adds a remembered Borderless/Bordered choice for Landscape. Bordered fits the crop inside normal printer margins; Share exports the photo without those margins. Every ASA capture still returns to the pair view after saving. It retains the corrected import paths, Single framing without person selection and optional Landscape white background. ASA retains its four-copy 3×2 layout, independent framing and left/right placement. The established Single/Landscape workflows and calibration remain preserved. See [CHANGELOG.md](CHANGELOG.md) and the [v1.0.12 user guide](docs/user-guide-v1.0.12.md).
+Version 1.0.13 patches affected dependencies, bounds printer responses, pins CI actions and removes redundant ASA/Landscape crop processing. It preserves the remembered Landscape borders, ASA return-to-pair behavior, Single framing, backgrounds, layouts and calibration. See [CHANGELOG.md](CHANGELOG.md) and the [v1.0.13 user guide](docs/user-guide-v1.0.13.md).
 
 Useful commands in Android Studio's Terminal:
 
@@ -37,11 +39,11 @@ git switch main
 git merge codex/short-feature-name
 ```
 
-For the next release, choose a new `versionName`, increase `versionCode` above `16`, build the installer with the same signing key, and publish a matching tag only after the required checks and Kirk's publication authorization.
+For the next release, choose a new `versionName`, increase `versionCode` above `17`, build the installer with the same signing key, and publish a matching tag only after the required checks and Kirk's publication authorization.
 
 ## Source publication authorization
 
-The October 28 authorization covers four sequential source/documentation commits and pushes to main. Match each application source state to its saved build fingerprint and verify the exact pushed commit in CI before proceeding to the next. Preserve every existing APK, checksum, key, tag and release. Installer publication or new tags require separate authorization; do not rebuild unchanged tested source.
+The October 30 authorization covers the v1.0.13 source/documentation commit and push to main, excluding the security report. Match the application source state to its saved build fingerprint and verify the exact pushed commit in CI. Keep the report, signed APK and checksum local. Preserve every existing APK, checksum, key, tag and release. Installer publication or new tags require separate authorization; do not rebuild unchanged tested source. This supersedes the earlier approval hold for v1.0.13 without establishing physical-test success.
 
 ## Local Git Versus Backup
 
@@ -82,7 +84,7 @@ Later releases must keep the v1.0.3 automatic key, allowing normal updates witho
 3. Review new source, docs and screenshots for credentials, customer data and local configuration. Keep `private-signing/`, `release/`, build output and task checkpoints excluded from Git.
 4. Commit only the intended changes, merge to `main` and push without rewriting history. Verify the remote SHA.
 5. Wait for **Android quality checks** to succeed on that exact SHA. A queued or running workflow is not a pass.
-6. Create and push the version tag at that verified commit. Publish the signed APK and matching SHA256SUMS file as GitHub release assets, with changes, upgrade instructions and honest verification limits.
+6. Only when separately authorized, create and push the version tag at that verified commit and publish the signed APK and matching SHA256SUMS file as GitHub release assets, with changes, upgrade instructions and honest verification limits. Source-only updates stop after CI verification.
 7. Verify the remote tag's commit, published release state and asset names/sizes/digests. Check the README download and screenshot paths. Do not replace existing tags/assets or rotate keys as a routine release step.
 
 Keep the README focused on the current version only, including its download, guide, release notes and screenshot paths. Maintain historical milestones in [CHANGELOG.md](CHANGELOG.md), versioned guides and existing releases; preserve their tags and assets. Current screenshots belong in individual collapsible sections; older interfaces remain clearly labeled as historical.

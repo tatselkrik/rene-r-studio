@@ -76,49 +76,72 @@ object PhotoImporter {
     }
 
     /** Decode only the selected source region, keeping small faces at source resolution. */
-    @Suppress("DEPRECATION")
-    suspend fun crop(context: Context, photo: ImportedPhoto, square: FloatRect, squareOnly: Boolean = true): File =
-        withContext(Dispatchers.IO) {
-            require(square.width >= 1f && square.height >= 1f) { "Select a valid crop." }
-            require(square.left >= 0 && square.top >= 0 && square.right <= photo.size.width + 0.01f && square.bottom <= photo.size.height + 0.01f) { "The crop must stay inside the photo." }
-            val uprightCrop = if (squareOnly) ImportCrop.pixelSquare(photo.size, square) else square
-            val raw = ImportCrop.toEncoded(uprightCrop, photo.encodedSize, photo.orientation)
-            val region = Rect(floor(raw.left).toInt().coerceAtLeast(0),
-                floor(raw.top).toInt().coerceAtLeast(0),
-                ceil(raw.right).toInt().coerceAtMost(photo.encodedSize.width),
-                ceil(raw.bottom).toInt().coerceAtMost(photo.encodedSize.height))
-            val decoder = try {
-                requireNotNull(BitmapRegionDecoder.newInstance(photo.file.path, false))
-            } catch (error: Exception) {
-                throw IllegalArgumentException("This photo format cannot be cropped on this phone. Try a JPEG or PNG.", error)
+    suspend fun crop(context: Context, photo: ImportedPhoto, square: FloatRect, squareOnly: Boolean = true): File {
+        var output: File? = null
+        try {
+            return withContext(Dispatchers.IO) {
+                val bitmap = cropBitmap(photo, square, squareOnly)
+                try {
+                    val directory = File(context.cacheDir, "captures").apply { mkdirs() }
+                    val file = File.createTempFile("selected-", ".png", directory).also { output = it }
+                    currentCoroutineContext().ensureActive()
+                    file.outputStream().use {
+                        check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) { "The selected crop could not be saved." }
+                    }
+                    currentCoroutineContext().ensureActive()
+                    file
+                } finally { bitmap.recycle() }
             }
-            val bitmap = try {
-                var sample = 1
-                while (max(region.width(), region.height()) / sample > 2400) sample *= 2
-                val decoded = requireNotNull(decoder.decodeRegion(region, BitmapFactory.Options().apply {
-                    inSampleSize = sample
-                    inPreferredConfig = Bitmap.Config.ARGB_8888
-                })) { "The selected crop could not be read." }
-                upright(decoded, photo.orientation)
-            } finally {
-                decoder.recycle()
-            }
-            val directory = File(context.cacheDir, "captures").apply { mkdirs() }
-            val output = File.createTempFile("selected-", ".png", directory)
-            try {
-                currentCoroutineContext().ensureActive()
-                output.outputStream().use {
-                    check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) { "The selected crop could not be saved." }
-                }
-                currentCoroutineContext().ensureActive()
-                output
-            } catch (error: Throwable) {
-                output.delete()
-                throw error
-            } finally {
-                bitmap.recycle()
-            }
+        } catch (error: Throwable) {
+            output?.delete()
+            throw error
         }
+    }
+
+    /** The caller owns the returned bitmap; previews need no PNG encode/decode round trip. */
+    suspend fun cropBitmap(photo: ImportedPhoto, square: FloatRect, squareOnly: Boolean = true): Bitmap {
+        var bitmap: Bitmap? = null
+        try {
+            return withContext(Dispatchers.IO) {
+                currentCoroutineContext().ensureActive()
+                decodeCrop(photo, square, squareOnly).also {
+                    bitmap = it
+                    currentCoroutineContext().ensureActive()
+                }
+            }
+        } catch (error: Throwable) {
+            bitmap?.recycle()
+            throw error
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun decodeCrop(photo: ImportedPhoto, square: FloatRect, squareOnly: Boolean): Bitmap {
+        require(square.width >= 1f && square.height >= 1f) { "Select a valid crop." }
+        require(square.left >= 0 && square.top >= 0 && square.right <= photo.size.width + 0.01f && square.bottom <= photo.size.height + 0.01f) { "The crop must stay inside the photo." }
+        val uprightCrop = if (squareOnly) ImportCrop.pixelSquare(photo.size, square) else square
+        val raw = ImportCrop.toEncoded(uprightCrop, photo.encodedSize, photo.orientation)
+        val region = Rect(floor(raw.left).toInt().coerceAtLeast(0),
+            floor(raw.top).toInt().coerceAtLeast(0),
+            ceil(raw.right).toInt().coerceAtMost(photo.encodedSize.width),
+            ceil(raw.bottom).toInt().coerceAtMost(photo.encodedSize.height))
+        val decoder = try {
+            requireNotNull(BitmapRegionDecoder.newInstance(photo.file.path, false))
+        } catch (error: Exception) {
+            throw IllegalArgumentException("This photo format cannot be cropped on this phone. Try a JPEG or PNG.", error)
+        }
+        return try {
+            var sample = 1
+            while (max(region.width(), region.height()) / sample > 2400) sample *= 2
+            val decoded = requireNotNull(decoder.decodeRegion(region, BitmapFactory.Options().apply {
+                inSampleSize = sample
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            })) { "The selected crop could not be read." }
+            upright(decoded, photo.orientation)
+        } finally {
+            decoder.recycle()
+        }
+    }
 
     private fun upright(source: Bitmap, orientation: Int): Bitmap {
         if (orientation !in 2..8) return source

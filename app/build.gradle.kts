@@ -16,8 +16,8 @@ android {
         applicationId = "com.idphoto.printing"
         minSdk = 23
         targetSdk = 36
-        versionCode = 16
-        versionName = "1.0.12"
+        versionCode = 17
+        versionName = "1.0.13"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -43,6 +43,12 @@ android {
 }
 
 dependencies {
+    constraints {
+        implementation("com.google.guava:guava:33.7.2-android") {
+            because("CVE-2026-102554: bound allocations during collection deserialization")
+        }
+    }
+
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
 
     implementation(composeBom)
@@ -69,4 +75,6 @@ dependencies {
     implementation("com.hp.jipp:jipp-core:0.7.18")
 
     testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
 }

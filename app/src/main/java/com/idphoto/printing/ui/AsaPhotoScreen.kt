@@ -36,7 +36,6 @@ import com.idphoto.printing.core.ImageSize
 import com.idphoto.printing.core.PrintScale
 import com.idphoto.printing.image.AsaPhotoComposer
 import com.idphoto.printing.image.BackgroundWhitener
-import com.idphoto.printing.image.BitmapLoader
 import com.idphoto.printing.image.ImportedPhoto
 import com.idphoto.printing.image.PhotoAdjustmentProcessor
 import com.idphoto.printing.image.PhotoAdjustments
@@ -233,10 +232,7 @@ fun AsaPhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
         try {
             check(complete)
             for (source in photos) {
-                val cropFile = PhotoImporter.crop(context, source.photo, source.crop, squareOnly = false)
-                try {
-                    decoded += withContext(Dispatchers.IO) { BitmapLoader.load(cropFile) }
-                } finally { cropFile.delete() }
+                decoded += PhotoImporter.cropBitmap(source.photo, source.crop, squareOnly = false)
             }
             val composed = withContext(Dispatchers.Default) { AsaPhotoComposer.compose(decoded, firstSide) }
             currentCoroutineContext().ensureActive()

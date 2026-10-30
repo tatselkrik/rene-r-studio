@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.core.content.edit
 import com.hp.jipp.encoding.Attribute
-import com.hp.jipp.encoding.IppInputStream
 import com.hp.jipp.encoding.IppOutputStream
 import com.hp.jipp.encoding.IppPacket
 import com.hp.jipp.encoding.KeywordOrName
@@ -330,7 +329,9 @@ object DirectIppPrinter {
                 }
                 throw IOException(message)
             }
-            return responseStream.use { IppInputStream(it).readPacket() }
+            return responseStream.use {
+                readPrinterResponse(it, connection.getHeaderField("Content-Length")?.toLongOrNull() ?: -1, timeoutMs)
+            }
         } finally {
             connection.disconnect()
         }

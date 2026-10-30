@@ -75,3 +75,10 @@
 ## 2026-10-28
 
 - Kirk explicitly authorized source and release-log updates for v1.0.9 through v1.0.12, pushed one version at a time. This supersedes the October 27 Git hold; it does not establish physical-test success or authorize APK uploads, GitHub Releases or tags. Keep the README focused on the current version and remove code-review material from it; retain historical changes in the release log and versioned guides.
+
+## 2026-10-30
+
+- Security exceptions to the old toolchain baseline use Gradle 9.8.1 with integrity checks, compatible AGP 9.4.1 and patched Kotlin 2.4.21, Guava 33.7.2 variants and targeted build-library constraints. Preserve direct CameraX/ML Kit/Compose BOM pins, application identity, keys, layouts and color/size calibration.
+- Bound IPP metadata before recursive decoding. ASA/Landscape can use region-decoded bitmaps directly; Single retains its file crop. Avoid reintroducing temporary PNG round trips without a demonstrated need.
+- The local security candidate is v1.0.13/build17. Earlier Git authorization covered v1.0.9–v1.0.12 only; new publication approval is required. Keep review material outside the current-only README.
+- Later on October 30, Kirk explicitly authorized the v1.0.13 source/documentation commit and push, excluding the security report. This supersedes the preceding Git hold. Keep that report, the signed APK and checksum local; no new tag or GitHub Release is authorized, and approval does not establish physical-test success.

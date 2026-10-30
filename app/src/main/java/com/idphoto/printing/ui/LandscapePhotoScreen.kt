@@ -31,7 +31,6 @@ import com.idphoto.printing.core.ImageSize
 import com.idphoto.printing.core.LandscapeCrop
 import com.idphoto.printing.image.PhotoAdjustments
 import com.idphoto.printing.image.PhotoAdjustmentProcessor
-import com.idphoto.printing.image.BitmapLoader
 import com.idphoto.printing.image.ImportedPhoto
 import com.idphoto.printing.image.PhotoImporter
 import com.idphoto.printing.image.BackgroundWhitener
@@ -245,9 +244,7 @@ fun LandscapePhotoScreen(connection: PrinterConnection, onBack: () -> Unit) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(::back, Modifier.weight(1f).height(48.dp), enabled = !busy) { Text("Back") }
                 Button({ work {
-                    val file = PhotoImporter.crop(context, requireNotNull(photo), requireNotNull(crop), squareOnly = false)
-                    workingFiles += file
-                    preview = withContext(Dispatchers.IO) { BitmapLoader.load(file) }
+                    preview = PhotoImporter.cropBitmap(requireNotNull(photo), requireNotNull(crop), squareOnly = false)
                     whiteBackgroundEnabled = false
                     whiteBitmap = null
                     whiteSource = null

@@ -4,6 +4,16 @@ Version milestones are listed below; intermediate development and validation bui
 
 Entries dated October 28 record source and documentation publication of local builds prepared on October 27. Signed APKs and checksums remain local. Physical-test limitations are retained below.
 
+## 1.0.13 - 2026-10-30
+
+- Patch Guava and affected build libraries. Use security-patched Gradle 9.8.1 and Kotlin/Compose compiler 2.4.21 with compatible Android Gradle Plugin 9.4.1. Pin the official Gradle distribution checksum, verify the refreshed wrapper JAR and freeze CI actions to their current immutable commits.
+- Bound printer responses to 1 MiB, 10,000 wire tokens and 32 collection levels before JIPP decoding. Reject malformed framing and check elapsed time between reads while retaining socket timeouts, TLS pinning and cleartext rejection.
+- Decode ASA/Landscape crops directly into preview bitmaps, removing temporary PNG compression, writes and second decoding. Preserve Single's file crop, EXIF transforms, resolution limits, backgrounds, layouts and calibration.
+- Make background-mask rows cancellable and recycle partial output on failure/cancellation.
+- Build 17 source and documentation are published on GitHub; the signed APK and checksum remain local. Checks passed: 104 unit tests, three API 36 image tests, debug/release assembly, release lint (zero errors/27 advisory warnings), 10 installer-safety scenarios and emulator smoke checks. OSV rescan found no matches across 165 runtime and 114 build coordinates; this does not certify shaded/native SDKs or firmware.
+- ASA imports and first capture still return to side-by-side and originals are saved. Single reaches its final sheet; Landscape background, both borders and Share work. No recipient or print job selected.
+- This update publishes source and release logs only, without a new tag, GitHub Release or installer upload. The exact signed upgrade retained camera permission and paper/border preferences, and passed Landscape preview plus the first ASA capture return. Installed and local APK hashes match. Physical printer acceptance remains pending; preserve earlier installers.
+
 ## 1.0.12 - 2026-10-28
 
 - Add a remembered Borderless / Bordered choice on Landscape's final print preview. Borderless remains the default and keeps its zero-margin fill request. Bordered keeps landscape orientation, requests regular 5×7 paper and 3 mm margins, and fits the full crop inside the printable area. Both retain Matte / Glossy selection.

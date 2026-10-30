@@ -4,16 +4,17 @@
 
 An Android photo workspace for Rene'R's in-house printing service. Capture or open a photo, prepare an ID sheet or a full-page landscape image, adjust its appearance, and print directly to an Epson EcoTank L15150 over local Wi-Fi.
 
-**Current version:** 1.0.12 (build 16) · **Platform:** Android 6.0+ · **Distribution:** Local signed APK; source and documentation on GitHub
+**Current version:** 1.0.13 (build 17) · **Platform:** Android 6.0+ · **Distribution:** Signed APK kept locally; source and documentation on GitHub
 
-[User guide](docs/user-guide-v1.0.12.md) · [Release notes](#release-notes) · [Application tour](#application-tour) · [Developer setup](#developer-setup)
+[User guide](docs/user-guide-v1.0.13.md) · [Release notes](#release-notes) · [Application tour](#application-tour) · [Developer setup](#developer-setup)
 
-## What's new in 1.0.12
+## What's new in 1.0.13
 
-- **Landscape border choice:** select **Borderless** or **Bordered** on the final print preview. Borderless remains the default; the choice is remembered.
-- **Bordered preview and printing:** view the white margins before printing. Bordered fits the complete crop inside normal margins, with either Matte or Glossy paper.
+- **Security updates:** patched affected runtime and build dependencies, verified the Gradle wrapper and pinned CI actions to immutable commits.
+- **Safer printer responses:** oversized, excessively nested or malformed responses are rejected before decoding.
+- **More efficient photo preparation:** ASA and Landscape previews avoid temporary PNG encoding/decoding. Obsolete background processing can stop sooner.
 
-ASA camera shots and imports keep returning to the side-by-side editor. Single framing, optional Landscape white Background and ASA's four-copy horizontal 3×2 layout remain available. The signed APK remains local; source and documentation are maintained on GitHub. See the [release notes](CHANGELOG.md#1012---2026-10-28).
+Photo workflows, camera-original saving, layouts and calibration are preserved. Source and documentation are published on GitHub; the signed APK and checksum remain local. See the [release notes](CHANGELOG.md#1013---2026-10-30).
 
 ## Photo workflows
 
@@ -39,9 +40,9 @@ ASA camera shots and imports keep returning to the side-by-side editor. Single f
 
 ## Installation and updates
 
-The signed APK and matching checksum for this build are kept locally; there is no public installer upload for v1.0.12.
+The signed APK and matching checksum for this build are kept locally; there is no public installer upload for v1.0.13.
 
-1. Obtain **ReneR-Studio-v1.0.12.apk** and its matching checksum from the maintainer.
+1. Obtain **ReneR-Studio-v1.0.13.apk** and its matching checksum from the maintainer.
 2. Open it on the phone, allow installation from that source if Android asks, and install the update.
 3. Connect the phone and L15150 to the same local network, normally the same Wi-Fi. Open the app and check for **Printer ready**.
 
@@ -59,7 +60,7 @@ This build is distributed as a local signed APK, with manual installation and a 
 
 Camera originals save under **Pictures / ReneR ID Print**. The existing album name is retained across the app rename. There is no final Save button: **Share** exports the finished image, while automatic saving preserves the untouched camera original.
 
-The phone and printer need local network access to each other; internet is not required. If automatic discovery needs help, open **Printer Setup** and connect by address. See the [user guide](docs/user-guide-v1.0.12.md) for framing, paper selection and troubleshooting.
+The phone and printer need local network access to each other; internet is not required. If automatic discovery needs help, open **Printer Setup** and connect by address. See the [user guide](docs/user-guide-v1.0.13.md) for framing, paper selection and troubleshooting.
 
 ## Output and printer behavior
 
@@ -86,9 +87,9 @@ Landscape defaults to **Borderless**: fill scaling, landscape orientation and ze
 
 | Version | Date | Summary |
 | --- | --- | --- |
-| [1.0.12](CHANGELOG.md#1012---2026-10-28) | 2026-10-28 | Remembered Borderless / Bordered Landscape printing and margin preview |
+| [1.0.13](CHANGELOG.md#1013---2026-10-30) | 2026-10-30 | Security patches, bounded printer responses and more efficient crop previews |
 
-See the [detailed notes](CHANGELOG.md#1012---2026-10-28) for changes and verification limits. The signed installer and checksum remain local. Source and release logs are published in version order; physical phone/printer results remain unverified.
+See the [detailed notes](CHANGELOG.md#1013---2026-10-30) for changes and verification limits. The signed installer and checksum remain local. Physical phone/printer results remain unverified.
 
 ## Application tour
 
@@ -208,7 +209,7 @@ The project targets one established 5×7-inch L15150 workflow. Other paper sizes
 
 | Document | Purpose |
 | --- | --- |
-| [User guide — v1.0.12](docs/user-guide-v1.0.12.md) | Installation, Single/ASA/Landscape workflows, adjustments, paper and troubleshooting |
+| [User guide — v1.0.13](docs/user-guide-v1.0.13.md) | Installation, Single/ASA/Landscape workflows, adjustments, paper and troubleshooting |
 | [Release history](CHANGELOG.md) | Version milestones, retained behavior and verification limits |
 | [Screenshot notes](docs/screenshots/current/README.md) | Current gallery inventory, demo sources and privacy boundary |
 | [Git and Release Guide](GIT_AND_RELEASE_GUIDE.md) | Branches, automatic signing and verified publication |
@@ -217,8 +218,8 @@ The project targets one established 5×7-inch L15150 workflow. Other paper sizes
 
 | Component | Project baseline |
 | --- | --- |
-| Language / UI | Kotlin / Jetpack Compose, BOM 2026.06.00 |
-| Build | Gradle 9.1.0 / Android Gradle Plugin 9.0.1 |
+| Language / UI | Kotlin 2.4.21 / Jetpack Compose, BOM 2026.06.00 |
+| Build | Gradle 9.8.1 / Android Gradle Plugin 9.4.1 |
 | Android | Compile SDK 36.1, target 36, minimum 23 |
 | Java | JDK 17 or a compatible Android Studio embedded JDK |
 | Camera | CameraX 1.6.1 |
@@ -236,6 +237,7 @@ app/src/main/java/com/idphoto/printing/
 ├── print/      JPEG rendering, paper profiles and IPPS
 └── ui/         Capture, crop, review, preview and setup screens
 app/src/test/   Unit tests
+app/src/androidTest/ Image regression tests
 docs/           User guides and screenshot galleries
 tools/          Signed-installer helper and safety regression checks
 ```
@@ -247,6 +249,6 @@ Verification on Windows, with the JDK configured:
 powershell -ExecutionPolicy Bypass -File .\tools\test-installer-safety.ps1
 ```
 
-GitHub's Android quality workflow runs unit tests, debug lint and a debug build. Local verification includes 95 unit tests, debug/release assembly, release lint, installer signature/package/version checks, and a signed upgrade over the prior local candidate. Emulator checks cover both border previews, remembered settings after restart, independent paper selection, the sharing panel and controls at 411 dp/default text and 360 dp/1.2 text scale. ASA capture/import and JPEG-rendering source remain unchanged from the previously tested candidate. Installer-safety regression checks also run in CI. Physical ASA phone/printer acceptance remains pending; landscape border widths, edge coverage, orientation and paper compatibility still need an L15150 sample print.
+GitHub's Android quality workflow runs unit tests, debug lint and a debug build; its badge describes published main. This local candidate has not been pushed and has no new CI run. Local verification passed 104 unit tests, three Android image-regression tests, debug/release assembly, release lint (zero errors; 27 advisory warnings), installer-safety checks and emulator workflow checks. Image tests cover eight EXIF orientations, 24 exact-pixel comparisons and output size/600-dpi metadata. The signed upgrade retained camera permission and paper/border preferences. Physical phone/printer acceptance remains pending.
 
 The configured signing helper uses the permanent automatic key and a Windows-protected local credential without prompting for a password. Missing signing state fails rather than replacing the key. Private signing material must never enter Git or release assets. See the [release guide](GIT_AND_RELEASE_GUIDE.md) before preparing an installer.
